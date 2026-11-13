@@ -6,18 +6,27 @@ import type { Territory } from '../territory';
 const DEG = Math.PI / 180;
 
 const VERTEX_DECL = /* glsl */ `
+attribute float countryId;
 varying vec3 vGridDir;
+flat varying float vCountry;
 `;
 
 /**
- * Lecture de la grille dans le shader. Même convention que src/cube-grid.ts.
- * Le propriétaire d'un pixel est choisi par vote pondéré des 4 cases voisines :
- * les contours de zone sont lissés au lieu d'être en escalier. La mer ne vote pas.
+ * Peinture des zones dans le shader. Même convention de grille que src/cube-grid.ts.
+ *
+ * Chaque pixel connaît son vrai pays (attribut du maillage), donc la peinture ne déborde jamais
+ * d'une frontière :
+ * - pays entièrement à un joueur → peint en entier, exactement jusqu'aux frontières ;
+ * - pays que personne n'a touché → rien à lire ;
+ * - pays partagé → on lit la grille, mais seules les cases de ce pays votent. Le vote pondéré
+ *   des 4 cases voisines lisse le contour intérieur de la zone.
  */
 const FRAGMENT_DECL = /* glsl */ `
 varying vec3 vGridDir;
+flat varying float vCountry;
 uniform sampler2D uGrid;
 uniform sampler2D uCountryGrid;
+uniform sampler2D uCountryState;
 uniform vec4 uFlipIds;
 uniform float uFlip;
 uniform float uGridN;
@@ -26,22 +35,20 @@ uniform float uPulse;
 
 float gridWarp(float t) { return atan(t) * 1.2732395447; }
 
-// Les 6 faces sont empilées dans une seule texture de n × 6n : une seule lecture, sans branchement.
+// Les 6 faces sont empilées dans une texture de n × 6n : une seule lecture, sans branchement.
+vec2 gridUv(float face, vec2 texel) {
+  vec2 t = clamp(texel, vec2(0.0), vec2(uGridN - 1.0)) + 0.5;
+  return vec2(t.x / uGridN, (face * uGridN + t.y) / (6.0 * uGridN));
+}
 float gridOwner(float face, vec2 texel) {
-  vec2 t = clamp(texel, vec2(0.0), vec2(uGridN - 1.0)) + 0.5;
-  return floor(texture2D(uGrid, vec2(t.x / uGridN, (face * uGridN + t.y) / (6.0 * uGridN))).r * 255.0 + 0.5);
+  return floor(texture2D(uGrid, gridUv(face, texel)).r * 255.0 + 0.5);
 }
-
-// Pays de la case qui contient ce pixel (255 = mer).
 float gridCountry(float face, vec2 texel) {
-  vec2 t = clamp(texel, vec2(0.0), vec2(uGridN - 1.0)) + 0.5;
-  return floor(texture2D(uCountryGrid, vec2(t.x / uGridN, (face * uGridN + t.y) / (6.0 * uGridN))).r * 255.0 + 0.5);
+  return floor(texture2D(uCountryGrid, gridUv(face, texel)).r * 255.0 + 0.5);
 }
 
-float zoneCountry;
-
-// Renvoie (propriétaire, poids du vote).
-vec2 zoneAt(vec3 d) {
+// Renvoie (propriétaire, poids du vote) pour un pixel du pays country.
+vec2 zoneAt(vec3 d, float country) {
   vec3 a = abs(d);
   float face;
   vec2 uv;
@@ -50,18 +57,18 @@ vec2 zoneAt(vec3 d) {
   else { face = d.z > 0.0 ? 4.0 : 5.0; uv = d.xy / a.z; }
   vec2 p = (vec2(gridWarp(uv.x), gridWarp(uv.y)) * 0.5 + 0.5) * uGridN - 0.5;
   vec2 base = floor(p);
-  zoneCountry = uFlip > 0.0 ? gridCountry(face, floor(p + 0.5)) : -1.0;
   vec2 f = p - base;
-  vec4 ids = vec4(
-    gridOwner(face, base),
-    gridOwner(face, base + vec2(1.0, 0.0)),
-    gridOwner(face, base + vec2(0.0, 1.0)),
-    gridOwner(face, base + vec2(1.0, 1.0)));
+  vec2 b1 = base + vec2(1.0, 0.0);
+  vec2 b2 = base + vec2(0.0, 1.0);
+  vec2 b3 = base + vec2(1.0, 1.0);
+  vec4 ids = vec4(gridOwner(face, base), gridOwner(face, b1), gridOwner(face, b2), gridOwner(face, b3));
   vec4 w = vec4((1.0 - f.x) * (1.0 - f.y), f.x * (1.0 - f.y), (1.0 - f.x) * f.y, f.x * f.y);
-  // Cas le plus courant, loin de tout bord de zone : les 4 cases sont identiques.
-  if (ids.x == ids.y && ids.x == ids.z && ids.x == ids.w) return vec2(ids.x > 254.5 ? 0.0 : ids.x, 1.0);
   // La mer (255) ne vote pas.
   w *= step(ids, vec4(254.5));
+  // Seules les cases du pays du pixel votent ; s'il n'y en a aucune (liseré très fin), toutes votent.
+  vec4 cids = vec4(gridCountry(face, base), gridCountry(face, b1), gridCountry(face, b2), gridCountry(face, b3));
+  vec4 same = w * step(abs(cids - vec4(country)), vec4(0.5));
+  if (same.x + same.y + same.z + same.w > 0.0) w = same;
   float total = w.x + w.y + w.z + w.w;
   if (total <= 0.0) return vec2(0.0, 1.0);
   float best = 0.0;
@@ -78,7 +85,11 @@ vec2 zoneAt(vec3 d) {
 const FRAGMENT_COLOR = /* glsl */ `
 #include <color_fragment>
 {
-  vec2 zone = zoneAt(normalize(vGridDir));
+  float country = floor(vCountry + 0.5);
+  // État du pays : 0 = personne, 1..6 = entièrement à ce joueur, 254 = partagé.
+  float state = floor(texture2D(uCountryState, vec2((country + 0.5) / 256.0, 0.5)).r * 255.0 + 0.5);
+  vec2 zone = vec2(state, 1.0);
+  if (state > 200.0) zone = zoneAt(normalize(vGridDir), country);
   int who = int(zone.x + 0.5);
   if (who > 0 && who < 7) {
     vec3 paint = uPlayerColors[who];
@@ -87,7 +98,7 @@ const FRAGMENT_COLOR = /* glsl */ `
     paint *= 1.0 - 0.3 * edge;
     paint += vec3(uPulse * 0.25);
     // Pays qui vient de basculer : éclat blanc qui s'estompe.
-    if (uFlip > 0.0 && any(equal(vec4(zoneCountry), uFlipIds))) paint = mix(paint, vec3(1.0), uFlip * 0.85);
+    if (uFlip > 0.0 && any(equal(vec4(country), uFlipIds))) paint = mix(paint, vec3(1.0), uFlip * 0.85);
     diffuseColor.rgb = mix(diffuseColor.rgb, paint, 0.88);
   }
 }
@@ -101,6 +112,7 @@ export class TerritoryView {
   private readonly flip = { value: 0 };
   private readonly flipIds = { value: new THREE.Vector4(-1, -1, -1, -1) };
   private readonly countryTexture: THREE.DataTexture;
+  private readonly stateTexture: THREE.DataTexture;
 
   constructor(private readonly territory: Territory) {
     const n = territory.n;
@@ -120,6 +132,14 @@ export class TerritoryView {
     this.countryTexture.unpackAlignment = 1;
     this.countryTexture.needsUpdate = true;
 
+    // État de chaque pays (voir Territory.countryState) : une ligne de 256 valeurs.
+    this.stateTexture = new THREE.DataTexture(territory.countryState, 256, 1, THREE.RedFormat, THREE.UnsignedByteType);
+    this.stateTexture.magFilter = THREE.NearestFilter;
+    this.stateTexture.minFilter = THREE.NearestFilter;
+    this.stateTexture.generateMipmaps = false;
+    this.stateTexture.unpackAlignment = 1;
+    this.stateTexture.needsUpdate = true;
+
     const colors = [new THREE.Color(0), ...config.playerColors.map((c) => new THREE.Color(c))];
     while (colors.length < 7) colors.push(new THREE.Color(0xffffff));
 
@@ -127,6 +147,7 @@ export class TerritoryView {
     this.landMaterial.onBeforeCompile = (shader) => {
       shader.uniforms['uGrid'] = { value: this.texture };
       shader.uniforms['uCountryGrid'] = { value: this.countryTexture };
+      shader.uniforms['uCountryState'] = { value: this.stateTexture };
       shader.uniforms['uFlip'] = this.flip;
       shader.uniforms['uFlipIds'] = this.flipIds;
       shader.uniforms['uGridN'] = { value: n };
@@ -134,7 +155,7 @@ export class TerritoryView {
       shader.uniforms['uPulse'] = this.pulse;
       shader.vertexShader = shader.vertexShader
         .replace('#include <common>', `#include <common>\n${VERTEX_DECL}`)
-        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvGridDir = position;');
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvGridDir = position;\nvCountry = countryId;');
       shader.fragmentShader = shader.fragmentShader
         .replace('#include <common>', `#include <common>\n${FRAGMENT_DECL}`)
         .replace('#include <color_fragment>', FRAGMENT_COLOR);
@@ -157,7 +178,9 @@ export class TerritoryView {
   update(frameTime: number): void {
     if (this.territory.dirty) {
       this.territory.dirty = false;
+      this.territory.refreshCountryState();
       this.texture.needsUpdate = true;
+      this.stateTexture.needsUpdate = true;
     }
     this.pulse.value = Math.max(0, this.pulse.value - frameTime / config.capturePulseTime);
     this.flip.value = Math.max(0, this.flip.value - frameTime / config.flipFlashTime);

@@ -84,6 +84,10 @@ export function buildGlobe(world: World, landMaterial: THREE.Material): Globe {
   // Subdivise un triangle lon/lat jusqu'à ce qu'il épouse la courbure, puis l'émet.
   // La décision se prend arête par arête : deux triangles voisins coupent leur arête commune
   // au même point, ce qui évite toute fente entre eux.
+  // Indice du pays de chaque sommet : le shader des zones s'en sert pour respecter les frontières.
+  const countryIds: number[] = [];
+  let currentCountry = 0;
+
   const emit = (a: LonLat, b: LonLat, c: LonLat, depth: number): void => {
     const max = config.maxEdgeDeg;
     const sab = depth < 8 && angularDeg(a, b) > max;
@@ -119,10 +123,14 @@ export function buildGlobe(world: World, landMaterial: THREE.Material): Globe {
     pushPoint(positions, a[0], a[1], rTop);
     pushPoint(positions, b[0], b[1], rTop);
     pushPoint(positions, c[0], c[1], rTop);
-    for (let i = 0; i < 3; i++) colors.push(color.r, color.g, color.b);
+    for (let i = 0; i < 3; i++) {
+      colors.push(color.r, color.g, color.b);
+      countryIds.push(currentCountry);
+    }
   };
 
   for (const country of world.countries) {
+    currentCountry = country.index;
     // Teinte stable par pays (hachage simple de l'index).
     const palette = config.neutralColors;
     color.setHex(palette[(country.index * 7 + 3) % palette.length] ?? 0xffffff);
@@ -169,6 +177,7 @@ export function buildGlobe(world: World, landMaterial: THREE.Material): Globe {
   }
   landGeo.setAttribute('normal', new THREE.BufferAttribute(landNormals, 3));
   landGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(colors), 3));
+  landGeo.setAttribute('countryId', new THREE.BufferAttribute(new Float32Array(countryIds), 1));
   const land = new THREE.Mesh(landGeo, landMaterial);
   group.add(land);
 

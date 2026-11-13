@@ -1,8 +1,11 @@
 import { config } from './config';
-import { neighbor } from './cube-grid';
+import { cellToDir, neighbor } from './cube-grid';
 
 /** Valeur « mer » dans les tables par case. */
 export const SEA = 255;
+
+/** Valeur « pays partagé » dans `countryState`. */
+export const MIXED = 254;
 
 export type StepEvent = 'none' | 'trail' | 'capture' | 'death';
 
@@ -29,6 +32,14 @@ export class Territory {
   lastGain = 0;
   /** Pays qui ont basculé lors de la dernière capture. */
   readonly lastFlips: number[] = [];
+
+  /**
+   * État de chaque pays pour le rendu : 0 = à personne, 1..6 = entièrement à ce joueur,
+   * `MIXED` = partagé. Mis à jour par `refreshCountryState`.
+   */
+  readonly countryState = new Uint8Array(256);
+  /** Point de repère de chaque pays (x, y, z) : une case au cœur de son plus grand morceau. */
+  readonly countryCenter: Float32Array;
 
   /** Nombre de pays (indices 0..countryCount-1). */
   readonly countryCount: number;
@@ -84,6 +95,73 @@ export class Territory {
     this.near = new Int32Array(this.cells * 4);
     for (let c = 0; c < this.cells; c++) {
       for (let k = 0; k < 4; k++) this.near[c * 4 + k] = neighbor(this.n, c, k);
+    }
+    this.countryCenter = new Float32Array(this.countryCount * 3);
+    this.computeCenters();
+  }
+
+  /** Recalcule `countryState` à partir des décomptes par pays. */
+  refreshCountryState(): void {
+    const players = config.playerColors.length;
+    for (let p = 0; p < this.countryCount; p++) {
+      const size = this.countrySize[p] ?? 0;
+      let state = 0;
+      for (let who = 1; who <= players; who++) {
+        const mine = this.owned[who * 256 + p] ?? 0;
+        if (mine === 0) continue;
+        state = mine === size ? who : MIXED;
+        break;
+      }
+      this.countryState[p] = state;
+    }
+  }
+
+  /**
+   * Repère de chaque pays : la case de son plus grand morceau d'un seul tenant la plus proche
+   * du centre de ce morceau. Toujours sur le pays, même pour une forme en croissant.
+   */
+  private computeCenters(): void {
+    const { label, queue, near, country } = this;
+    label.fill(0);
+    const dir = [0, 0, 0];
+    const bestSize = new Int32Array(this.countryCount);
+    for (let start = 0; start < this.cells; start++) {
+      const p = country[start] ?? SEA;
+      if (p === SEA || label[start] !== 0) continue;
+      let head = 0;
+      let tail = 0;
+      queue[tail++] = start;
+      label[start] = 1;
+      let sx = 0;
+      let sy = 0;
+      let sz = 0;
+      while (head < tail) {
+        const c = queue[head++] ?? 0;
+        cellToDir(this.n, c, dir);
+        sx += dir[0] ?? 0;
+        sy += dir[1] ?? 0;
+        sz += dir[2] ?? 0;
+        for (let k = 0; k < 4; k++) {
+          const o = near[c * 4 + k] ?? 0;
+          if (label[o] === 0 && country[o] === p) {
+            label[o] = 1;
+            queue[tail++] = o;
+          }
+        }
+      }
+      if (tail <= (bestSize[p] ?? 0)) continue;
+      bestSize[p] = tail;
+      let best = -Infinity;
+      for (let i = 0; i < tail; i++) {
+        cellToDir(this.n, queue[i] ?? 0, dir);
+        const dot = (dir[0] ?? 0) * sx + (dir[1] ?? 0) * sy + (dir[2] ?? 0) * sz;
+        if (dot > best) {
+          best = dot;
+          this.countryCenter[p * 3] = dir[0] ?? 0;
+          this.countryCenter[p * 3 + 1] = dir[1] ?? 0;
+          this.countryCenter[p * 3 + 2] = dir[2] ?? 0;
+        }
+      }
     }
   }
 

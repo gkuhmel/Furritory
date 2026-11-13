@@ -11,6 +11,7 @@ import { startLoop, type LoopStats } from './loop';
 import { Pawn } from './pawn';
 import { buildGlobe } from './render/globe';
 import { PawnView } from './render/pawn-view';
+import { ShareLabels } from './render/share-labels';
 import { FootprintsView, TerritoryView } from './render/territory-view';
 import { SEA, Territory } from './territory';
 import { loadWorld } from './world';
@@ -61,19 +62,22 @@ async function start(): Promise<void> {
 
   // Pays sous le pion et score : rafraîchis seulement quand ils changent.
   let hudCell = -1;
+  const labels = new ShareLabels(territory, PLAYER);
+  /** La règle des 50 % est expliquée une fois, au premier pays entamé. */
+  let flipRuleShown = false;
   let shownScore = 0;
   function refreshHud(force = false): void {
     const cell = cellOf();
     if (!force && cell === hudCell) return;
     hudCell = cell;
     const country = territory.country[cell] ?? SEA;
-    if (country === SEA) hud.setCountry('', 0);
-    else hud.setCountry(countryNames[country] ?? '', territory.share(PLAYER, country));
+    hud.setCountry(country === SEA ? '' : (countryNames[country] ?? ''));
   }
   function refreshScore(): void {
     shownScore = territory.countriesOwned(PLAYER);
     hud.setScore(shownScore, territory.countryCount);
     refreshHud(true);
+    labels.refresh();
   }
   refreshScore();
 
@@ -130,7 +134,7 @@ async function start(): Promise<void> {
         globe.triangles,
       );
       onFrame = () => panel.frame();
-      Object.assign(window, { pawn, config, territory });
+      Object.assign(window, { pawn, config, territory, countryNames, refreshScore });
     });
   }
 
@@ -160,6 +164,9 @@ async function start(): Promise<void> {
         hud.show(flipMessage(territory.lastFlips) + plus);
       } else if (gained > 0) {
         hud.show(`Conquis !${plus}`);
+      } else if (!flipRuleShown && territory.lastGain > 0) {
+        flipRuleShown = true;
+        hud.show(`À ${Math.round(config.flipThreshold * 100)} %, le pays bascule en entier`);
       } else {
         hud.show(territory.lastGain > 0 ? 'Zone capturée !' : 'Boucle fermée');
       }
@@ -195,6 +202,7 @@ async function start(): Promise<void> {
       deathFlash.style.opacity = String(deathFlashLevel * 0.6);
     }
     renderer.render(scene, camera);
+    labels.update(camera, window.innerWidth, window.innerHeight);
     onFrame?.();
   }
 
