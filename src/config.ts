@@ -77,10 +77,10 @@ export const config = {
   deathFlashTime: 0.6,
 
   // --- Empreintes de la traînée ---
-  footprintSpacingDeg: 0.35,
-  footprintSizeDeg: 0.4,
+  footprintSpacingDeg: 0.3,
+  footprintSizeDeg: 0.24,
   /** Écart latéral gauche/droite des pattes (degrés). */
-  footprintOffsetDeg: 0.13,
+  footprintOffsetDeg: 0.09,
   footprintColor: 0x7a2412,
   footprintMax: 4000,
 };
