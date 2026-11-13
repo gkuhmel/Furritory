@@ -7,6 +7,11 @@ export const config = {
   fixedDt: 1 / 120,
   maxFrameTime: 0.1,
   maxDpr: 2,
+  /**
+   * Nombre max de pixels dessinés (en millions). Au-delà, la résolution de rendu baisse :
+   * un grand écran d'ordinateur ne coûte pas plus cher qu'une tablette.
+   */
+  maxRenderMegapixels: 3,
 
   // --- Globe plateau ---
   /** Épaisseur des terres au-dessus de la mer (en rayons). */

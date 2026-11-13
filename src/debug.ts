@@ -114,6 +114,7 @@ export class DebugPanel {
       `${this.fps.toFixed(0)} fps · pire image ${this.worstMs.toFixed(0)} ms\n` +
       `simu ${this.stats.updateMs.toFixed(2)} ms · rendu ${this.stats.renderMs.toFixed(2)} ms\n` +
       `${this.countryCount} pays · ${Math.round(this.triangles / 1000)}k tri · ${info.calls} appels\n` +
+      `rendu ${this.renderer.domElement.width}×${this.renderer.domElement.height} · écran ×${window.devicePixelRatio}\n` +
       `pion lat ${lat.toFixed(1)}° lon ${lon.toFixed(1)}°\n` +
       `zone ${this.territory.countOwned(1)} cases · traînée ${this.territory.trailLength}`;
     this.frames = 0;

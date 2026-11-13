@@ -74,7 +74,9 @@ async function start(): Promise<void> {
   function resize(): void {
     const w = window.innerWidth;
     const h = window.innerHeight;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, config.maxDpr));
+    // Résolution de rendu bornée par le DPR et par un budget total de pixels.
+    const budget = Math.sqrt((config.maxRenderMegapixels * 1e6) / (w * h));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, config.maxDpr, budget));
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();

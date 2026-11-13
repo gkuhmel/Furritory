@@ -19,8 +19,8 @@ export class Territory {
   readonly owner: Uint8Array;
   /** Joueur dont la traînée passe sur la case (0 = aucune). */
   readonly trail: Uint8Array;
-  /** Faces dont la table `owner` a changé depuis le dernier envoi au GPU. */
-  readonly dirtyFaces = [true, true, true, true, true, true];
+  /** Vrai si la table `owner` a changé depuis le dernier envoi au GPU. */
+  dirty = true;
 
   /** Cases de la traînée du joueur, dans l'ordre de passage. */
   private readonly trailCells: number[] = [];
@@ -56,7 +56,7 @@ export class Territory {
   private setOwner(cell: number, player: number): void {
     if (this.owner[cell] !== player) this.lastGain++;
     this.owner[cell] = player;
-    this.dirtyFaces[Math.floor(cell / (this.n * this.n))] = true;
+    this.dirty = true;
   }
 
   /** Donne au joueur tout le morceau de pays d'un seul tenant qui contient `cell`. */

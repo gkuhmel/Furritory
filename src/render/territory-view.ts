@@ -16,38 +16,27 @@ varying vec3 vGridDir;
  */
 const FRAGMENT_DECL = /* glsl */ `
 varying vec3 vGridDir;
-uniform sampler2D uFace0;
-uniform sampler2D uFace1;
-uniform sampler2D uFace2;
-uniform sampler2D uFace3;
-uniform sampler2D uFace4;
-uniform sampler2D uFace5;
+uniform sampler2D uGrid;
 uniform float uGridN;
 uniform vec3 uPlayerColors[7];
 uniform float uPulse;
 
 float gridWarp(float t) { return atan(t) * 1.2732395447; }
 
-float gridOwner(int face, vec2 texel) {
-  vec2 uv = (clamp(texel, vec2(0.0), vec2(uGridN - 1.0)) + 0.5) / uGridN;
-  float r;
-  if (face == 0) r = texture2D(uFace0, uv).r;
-  else if (face == 1) r = texture2D(uFace1, uv).r;
-  else if (face == 2) r = texture2D(uFace2, uv).r;
-  else if (face == 3) r = texture2D(uFace3, uv).r;
-  else if (face == 4) r = texture2D(uFace4, uv).r;
-  else r = texture2D(uFace5, uv).r;
-  return floor(r * 255.0 + 0.5);
+// Les 6 faces sont empilées dans une seule texture de n × 6n : une seule lecture, sans branchement.
+float gridOwner(float face, vec2 texel) {
+  vec2 t = clamp(texel, vec2(0.0), vec2(uGridN - 1.0)) + 0.5;
+  return floor(texture2D(uGrid, vec2(t.x / uGridN, (face * uGridN + t.y) / (6.0 * uGridN))).r * 255.0 + 0.5);
 }
 
 // Renvoie (propriétaire, poids du vote).
 vec2 zoneAt(vec3 d) {
   vec3 a = abs(d);
-  int face;
+  float face;
   vec2 uv;
-  if (a.x >= a.y && a.x >= a.z) { face = d.x > 0.0 ? 0 : 1; uv = d.yz / a.x; }
-  else if (a.y >= a.z) { face = d.y > 0.0 ? 2 : 3; uv = d.zx / a.y; }
-  else { face = d.z > 0.0 ? 4 : 5; uv = d.xy / a.z; }
+  if (a.x >= a.y && a.x >= a.z) { face = d.x > 0.0 ? 0.0 : 1.0; uv = d.yz / a.x; }
+  else if (a.y >= a.z) { face = d.y > 0.0 ? 2.0 : 3.0; uv = d.zx / a.y; }
+  else { face = d.z > 0.0 ? 4.0 : 5.0; uv = d.xy / a.z; }
   vec2 p = (vec2(gridWarp(uv.x), gridWarp(uv.y)) * 0.5 + 0.5) * uGridN - 0.5;
   vec2 base = floor(p);
   vec2 f = p - base;
@@ -57,6 +46,8 @@ vec2 zoneAt(vec3 d) {
     gridOwner(face, base + vec2(0.0, 1.0)),
     gridOwner(face, base + vec2(1.0, 1.0)));
   vec4 w = vec4((1.0 - f.x) * (1.0 - f.y), f.x * (1.0 - f.y), (1.0 - f.x) * f.y, f.x * f.y);
+  // Cas le plus courant, loin de tout bord de zone : les 4 cases sont identiques.
+  if (ids.x == ids.y && ids.x == ids.z && ids.x == ids.w) return vec2(ids.x > 254.5 ? 0.0 : ids.x, 1.0);
   // La mer (255) ne vote pas.
   w *= step(ids, vec4(254.5));
   float total = w.x + w.y + w.z + w.w;
@@ -91,31 +82,25 @@ const FRAGMENT_COLOR = /* glsl */ `
 /** Matériau des terres + textures de la grille : peint les zones possédées. */
 export class TerritoryView {
   readonly landMaterial: THREE.MeshLambertMaterial;
-  private readonly textures: THREE.DataTexture[] = [];
+  private readonly texture: THREE.DataTexture;
   private readonly pulse = { value: 0 };
 
   constructor(private readonly territory: Territory) {
     const n = territory.n;
-    for (let face = 0; face < 6; face++) {
-      // Vue directe sur la table des propriétaires : pas de copie.
-      const data = territory.owner.subarray(face * n * n, (face + 1) * n * n);
-      const tex = new THREE.DataTexture(data, n, n, THREE.RedFormat, THREE.UnsignedByteType);
-      tex.magFilter = THREE.NearestFilter;
-      tex.minFilter = THREE.NearestFilter;
-      tex.generateMipmaps = false;
-      tex.unpackAlignment = 1;
-      tex.needsUpdate = true;
-      this.textures.push(tex);
-    }
+    // La table des propriétaires sert directement de texture (n × 6n), sans copie.
+    this.texture = new THREE.DataTexture(territory.owner, n, 6 * n, THREE.RedFormat, THREE.UnsignedByteType);
+    this.texture.magFilter = THREE.NearestFilter;
+    this.texture.minFilter = THREE.NearestFilter;
+    this.texture.generateMipmaps = false;
+    this.texture.unpackAlignment = 1;
+    this.texture.needsUpdate = true;
 
     const colors = [new THREE.Color(0), ...config.playerColors.map((c) => new THREE.Color(c))];
     while (colors.length < 7) colors.push(new THREE.Color(0xffffff));
 
     this.landMaterial = new THREE.MeshLambertMaterial({ vertexColors: true });
     this.landMaterial.onBeforeCompile = (shader) => {
-      this.textures.forEach((tex, face) => {
-        shader.uniforms[`uFace${face}`] = { value: tex };
-      });
+      shader.uniforms['uGrid'] = { value: this.texture };
       shader.uniforms['uGridN'] = { value: n };
       shader.uniforms['uPlayerColors'] = { value: colors };
       shader.uniforms['uPulse'] = this.pulse;
@@ -135,12 +120,9 @@ export class TerritoryView {
 
   /** À appeler à chaque image : envoie au GPU les faces modifiées, fait décroître l'éclat. */
   update(frameTime: number): void {
-    const dirty = this.territory.dirtyFaces;
-    for (let face = 0; face < 6; face++) {
-      if (!dirty[face]) continue;
-      dirty[face] = false;
-      const tex = this.textures[face];
-      if (tex) tex.needsUpdate = true;
+    if (this.territory.dirty) {
+      this.territory.dirty = false;
+      this.texture.needsUpdate = true;
     }
     this.pulse.value = Math.max(0, this.pulse.value - frameTime / config.capturePulseTime);
   }
