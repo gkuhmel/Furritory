@@ -95,8 +95,9 @@ src/
 |---|---|---|
 | `pawnSpeed` | 12 °/s | Tour du monde en 30 s, traversée de la France en ~1 s |
 | `turnRate` | 240 °/s | Vitesse de virage |
-| `cameraDistance` | 0,6 rayon | Portion de globe visible (~40° de large) |
-| `cameraTilt` | 35° | Inclinaison de la vue |
+| `viewSpanDeg` | 28° | Arc de globe visible sur la plus petite dimension de l'écran |
+| `cameraTiltDeg` | 35° | Inclinaison de la vue |
+| `stickRadiusPx` | 28 px | Rayon du joystick invisible : au-delà, l'ancre suit le doigt |
 
 Ces valeurs fixent l'échelle ressentie du monde : ce sont les premières à régler.
 

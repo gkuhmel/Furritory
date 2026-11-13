@@ -29,13 +29,16 @@ export const config = {
   sunIntensity: 1.6,
 
   // --- Caméra ---
-  fovDeg: 40,
+  fovDeg: 50,
   /** Vue globe (menu) : part de la plus petite dimension d'écran occupée par le globe. */
   globeFill: 0.86,
-  /** Vue jeu : hauteur de la caméra au-dessus du sol (en rayons) — spec §4 `cameraDistance`. */
-  cameraDistance: 0.6,
-  /** Vitesse de transition entre vue globe et vue jeu (1/s). */
-  zoomRate: 4,
+  /**
+   * Vue jeu : arc de globe visible (degrés) sur la plus petite dimension de l'écran.
+   * Fixe l'échelle ressentie du monde, identique sur téléphone et tablette.
+   */
+  viewSpanDeg: 28,
+  /** Vue jeu : inclinaison de la caméra par rapport à la verticale du pion (degrés). */
+  cameraTiltDeg: 35,
 
   // --- Rotation libre du globe (menus uniquement) ---
   /** Décroissance de l'inertie après le lâcher (1/s). */
@@ -44,4 +47,27 @@ export const config = {
   orbitMaxSpeed: 360,
   /** Rotation lente quand on ne touche à rien (°/s). */
   idleSpinDeg: 4,
+
+  // --- Pion ---
+  /** Vitesse de déplacement (°/s) : 12 = tour du monde en 30 s. */
+  pawnSpeed: 12,
+  /** Vitesse de virage (°/s). */
+  turnRate: 240,
+  /** Taille du pion (degrés d'arc). */
+  pawnSizeDeg: 1.6,
+  pawnColor: 0xd9482b,
+  /** Départ : longitude, latitude (France). */
+  startLon: 2.5,
+  startLat: 46.5,
+
+  // --- Contrôle au pouce (joystick invisible) ---
+  /** Déplacement minimal du doigt avant de donner un cap (px CSS). */
+  stickDeadzonePx: 6,
+  /** Au-delà de ce rayon, l'ancre du joystick suit le doigt : un demi-tour reste rapide (px CSS). */
+  stickRadiusPx: 28,
+
+  // --- Trace provisoire (remplacée par les empreintes à l'étape 3) ---
+  traceSpacingDeg: 0.6,
+  traceLength: 500,
+  traceColor: 0xd9482b,
 };

@@ -9,12 +9,9 @@ const AXIS_Y = new THREE.Vector3(0, 1, 0);
 /**
  * Caméra en orbite autour du globe (vue menu) : le doigt fait tourner le globe, avec inertie.
  * L'orientation est un quaternion, sans nord imposé : aucun blocage aux pôles.
- * En partie (étape 2), cette rotation libre sera remplacée par le suivi du pion.
+ * En partie, c'est `FollowCamera` qui prend le relais.
  */
 export class OrbitCamera {
-  readonly camera = new THREE.PerspectiveCamera(config.fovDeg, 1, 0.05, 20);
-  /** Vue rapprochée « jeu » (aperçu en debug) au lieu de la vue globe entière. */
-  gameView = false;
 
   private readonly orientation = new THREE.Quaternion();
   private readonly prevOrientation = new THREE.Quaternion();
@@ -29,23 +26,20 @@ export class OrbitCamera {
   private readonly tmpQ = new THREE.Quaternion();
   private readonly renderQ = new THREE.Quaternion();
 
-  constructor() {
+  constructor(private readonly camera: THREE.PerspectiveCamera) {
     // Départ centré sur l'Europe et l'Afrique, légèrement vu du nord.
     this.orientation.setFromEuler(new THREE.Euler(-20 * DEG, 15 * DEG, 0, 'YXZ'));
     this.prevOrientation.copy(this.orientation);
     this.distance = this.prevDistance = this.targetDistance();
   }
 
-  resize(w: number, h: number): void {
+  resize(h: number): void {
     this.viewportH = h;
-    this.camera.aspect = w / h;
-    this.camera.updateProjectionMatrix();
-    if (!this.gameView) this.distance = this.prevDistance = this.targetDistance();
+    this.distance = this.prevDistance = this.targetDistance();
   }
 
   /** Distance au centre pour la vue courante. */
   private targetDistance(): number {
-    if (this.gameView) return 1 + config.cameraDistance;
     // Le globe doit occuper `globeFill` de la plus petite dimension de l'écran.
     const halfV = (config.fovDeg * DEG) / 2;
     const halfMin = Math.atan(Math.tan(halfV) * Math.min(1, this.camera.aspect));
@@ -77,12 +71,9 @@ export class OrbitCamera {
       this.velX *= decay;
       this.velY *= decay;
       // L'inertie s'éteint vers une rotation lente de présentation.
-      const idle = this.gameView ? 0 : config.idleSpinDeg * DEG;
+      const idle = config.idleSpinDeg * DEG;
       this.rotate(this.velX * dt, (this.velY + idle * (1 - Math.min(1, Math.abs(this.velY)))) * dt);
     }
-
-    const k = 1 - Math.exp(-config.zoomRate * dt);
-    this.distance += (this.targetDistance() - this.distance) * k;
   }
 
   private rotate(ax: number, ay: number): void {
@@ -95,7 +86,8 @@ export class OrbitCamera {
   apply(alpha: number): void {
     this.renderQ.slerpQuaternions(this.prevOrientation, this.orientation, alpha);
     const d = this.prevDistance + (this.distance - this.prevDistance) * alpha;
-    this.camera.quaternion.copy(this.renderQ);
+    this.camera.up.set(0, 1, 0).applyQuaternion(this.renderQ);
     this.camera.position.set(0, 0, d).applyQuaternion(this.renderQ);
+    this.camera.lookAt(0, 0, 0);
   }
 }

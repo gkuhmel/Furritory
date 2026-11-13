@@ -1,3 +1,5 @@
+import { config } from './config';
+
 /**
  * Entrée tactile : un seul doigt suivi, déplacements cumulés en pixels CSS.
  * Bloque tous les gestes parasites de Safari (zoom, scroll, menu contextuel).
@@ -10,6 +12,13 @@ export class Input {
   private lastY = 0;
   private dx = 0;
   private dy = 0;
+  /** Joystick invisible : dernier cap donné, en direction d'écran normalisée (y vers le bas). */
+  dirX = 0;
+  dirY = -1;
+  /** Vrai dès qu'un cap a été donné au moins une fois. */
+  hasDir = false;
+  private anchorX = 0;
+  private anchorY = 0;
 
   constructor(target: HTMLElement) {
     target.addEventListener('pointerdown', (e) => {
@@ -20,6 +29,8 @@ export class Input {
       this.lastY = e.clientY;
       this.dx = 0;
       this.dy = 0;
+      this.anchorX = e.clientX;
+      this.anchorY = e.clientY;
       try {
         target.setPointerCapture(e.pointerId);
       } catch {
@@ -32,6 +43,22 @@ export class Input {
       this.dy += e.clientY - this.lastY;
       this.lastX = e.clientX;
       this.lastY = e.clientY;
+
+      // Cap = direction ancre → doigt. Seule la direction compte, pas la longueur du geste.
+      const ox = e.clientX - this.anchorX;
+      const oy = e.clientY - this.anchorY;
+      const len = Math.hypot(ox, oy);
+      if (len > config.stickDeadzonePx) {
+        this.dirX = ox / len;
+        this.dirY = oy / len;
+        this.hasDir = true;
+      }
+      if (len > config.stickRadiusPx) {
+        // L'ancre se laisse traîner derrière le doigt.
+        const k = (len - config.stickRadiusPx) / len;
+        this.anchorX += ox * k;
+        this.anchorY += oy * k;
+      }
     });
     const release = (e: PointerEvent): void => {
       if (e.pointerId !== this.pointerId) return;

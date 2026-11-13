@@ -1,6 +1,24 @@
 import type * as THREE from 'three';
-import type { OrbitCamera } from './camera';
+import { config } from './config';
 import type { LoopStats } from './loop';
+import type { Pawn } from './pawn';
+
+const RAD = 180 / Math.PI;
+
+type NumericKey = {
+  [K in keyof typeof config]: (typeof config)[K] extends number ? K : never;
+}[keyof typeof config];
+
+/** Curseurs de réglage : [clé de config, libellé, min, max, pas]. */
+const SLIDERS: [NumericKey, string, number, number, number][] = [
+  ['pawnSpeed', 'Vitesse pion (°/s)', 4, 30, 0.5],
+  ['turnRate', 'Virage (°/s)', 60, 720, 10],
+  ['viewSpanDeg', 'Zone visible (°)', 10, 60, 1],
+  ['cameraTiltDeg', 'Inclinaison (°)', 0, 70, 1],
+  ['fovDeg', 'Focale (°)', 25, 80, 1],
+  ['pawnSizeDeg', 'Taille pion (°)', 0.5, 4, 0.1],
+  ['stickRadiusPx', 'Rayon joystick (px)', 8, 80, 1],
+];
 
 /** Panneau de debug (?debug=1) : chargé à la demande, absent du jeu normal. */
 export class DebugPanel {
@@ -13,7 +31,8 @@ export class DebugPanel {
   constructor(
     private readonly stats: LoopStats,
     private readonly renderer: THREE.WebGLRenderer,
-    orbit: OrbitCamera,
+    app: { globeView: boolean },
+    private readonly pawn: Pawn,
     private readonly countryCount: number,
     private readonly triangles: number,
   ) {
@@ -22,23 +41,60 @@ export class DebugPanel {
     const root = document.createElement('div');
     root.style.cssText =
       'position:fixed;left:8px;top:calc(8px + env(safe-area-inset-top,0px));z-index:10;' +
-      'font:12px/1.4 ui-monospace,Menlo,monospace;color:#fff;background:rgba(0,0,0,.6);' +
-      'padding:8px 10px;border-radius:8px;white-space:pre';
+      'font:11px/1.4 ui-monospace,Menlo,monospace;color:#fff;background:rgba(0,0,0,.6);' +
+      'padding:8px 10px;border-radius:8px;max-width:calc(100vw - 16px);box-sizing:border-box';
     this.text = document.createElement('div');
+    this.text.style.whiteSpace = 'pre';
     root.appendChild(this.text);
 
-    const button = document.createElement('button');
-    button.style.cssText =
-      'margin-top:6px;font:inherit;color:#fff;background:#6b5236;border:0;border-radius:6px;padding:6px 10px';
+    const buttonCss =
+      'margin:6px 6px 0 0;font:inherit;color:#fff;background:#6b5236;border:0;border-radius:6px;padding:6px 10px';
+    const viewButton = document.createElement('button');
+    viewButton.style.cssText = buttonCss;
     const label = (): void => {
-      button.textContent = orbit.gameView ? 'Vue globe' : 'Vue jeu (rapprochée)';
+      viewButton.textContent = app.globeView ? 'Reprendre le jeu' : 'Vue globe (pause)';
     };
     label();
-    button.addEventListener('click', () => {
-      orbit.gameView = !orbit.gameView;
+    viewButton.addEventListener('click', () => {
+      app.globeView = !app.globeView;
       label();
     });
-    root.appendChild(button);
+
+    const sliders = document.createElement('div');
+    sliders.style.display = 'none';
+    for (const [key, name, min, max, step] of SLIDERS) {
+      const row = document.createElement('label');
+      row.style.cssText = 'display:block;margin-top:6px';
+      const caption = document.createElement('span');
+      const range = document.createElement('input');
+      range.type = 'range';
+      range.min = String(min);
+      range.max = String(max);
+      range.step = String(step);
+      range.value = String(config[key]);
+      range.style.cssText = 'display:block;width:210px;touch-action:pan-x';
+      const show = (): void => {
+        caption.textContent = `${name} : ${config[key]}`;
+      };
+      show();
+      range.addEventListener('input', () => {
+        config[key] = Number(range.value);
+        show();
+      });
+      row.append(caption, range);
+      sliders.appendChild(row);
+    }
+    const tuneButton = document.createElement('button');
+    tuneButton.style.cssText = buttonCss;
+    tuneButton.textContent = 'Réglages';
+    tuneButton.addEventListener('click', () => {
+      sliders.style.display = sliders.style.display === 'none' ? 'block' : 'none';
+    });
+
+    root.append(viewButton, tuneButton, sliders);
+    // Les touches sur le panneau ne doivent pas piloter le pion.
+    root.addEventListener('pointerdown', (e) => e.stopPropagation());
+    root.addEventListener('touchmove', (e) => e.stopPropagation());
     document.body.appendChild(root);
   }
 
@@ -49,10 +105,14 @@ export class DebugPanel {
     if (this.elapsed < 0.5) return;
     this.fps = this.frames / this.elapsed;
     const info = this.renderer.info.render;
+    const p = this.pawn.pos;
+    const lat = Math.asin(p.y) * RAD;
+    const lon = Math.atan2(p.x, p.z) * RAD;
     this.text.textContent =
       `${this.fps.toFixed(0)} fps · pire image ${this.worstMs.toFixed(0)} ms\n` +
       `simu ${this.stats.updateMs.toFixed(2)} ms · rendu ${this.stats.renderMs.toFixed(2)} ms\n` +
-      `${this.countryCount} pays · ${Math.round(this.triangles / 1000)}k triangles · ${info.calls} appels`;
+      `${this.countryCount} pays · ${Math.round(this.triangles / 1000)}k tri · ${info.calls} appels\n` +
+      `pion lat ${lat.toFixed(1)}° lon ${lon.toFixed(1)}°`;
     this.frames = 0;
     this.elapsed = 0;
     this.worstMs = 0;
