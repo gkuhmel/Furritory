@@ -1,6 +1,6 @@
 # Furritory — instructions pour Claude Code
 
-Jeu web mobile (Safari iPhone, portrait) : un animal-figurine conquiert le monde sur un globe-plateau en traçant des boucles d'empreintes ; un pays possédé à plus de 50 % bascule en entier.
+Jeu web mobile (Safari iPhone et iPad, portrait et paysage) : un animal-figurine conquiert le monde sur un globe-plateau en traçant des boucles d'empreintes ; un pays possédé à plus de 50 % bascule en entier.
 
 ## Référence
 - La spécification complète est dans `docs/specs.md`. La lire avant toute tâche.
@@ -15,6 +15,7 @@ Jeu web mobile (Safari iPhone, portrait) : un animal-figurine conquiert le monde
 - Vite + TypeScript strict, aucun framework UI, rendu Three.js.
 - Boucle à pas de temps fixe ; la simulation ne doit pas dépendre du framerate.
 - Globe de rayon 1 ; positions en vecteurs unitaires, distances en degrés, temps en secondes.
+- Rien ne dépend d'une taille ou d'une orientation d'écran fixe : cadrage calé sur la plus petite dimension, HUD dans les marges de sécurité.
 - Pointer Events avec `touch-action: none` ; pas de zoom, de scroll ni de sélection.
 - `localStorage` toujours entouré d'un `try/catch`.
 - Le panneau de debug s'active avec `?debug=1` et ne doit rien coûter quand il est désactivé.

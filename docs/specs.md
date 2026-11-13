@@ -44,7 +44,11 @@ Ce qui distingue le jeu du genre « boucle de territoire » :
 ## 3. Stack et contraintes techniques
 
 - **Vite + TypeScript strict**, sans framework UI, rendu **Three.js** (WebGL).
-- Cible : **Safari iPhone** en portrait, 60 fps.
+- Cibles : **Safari iPhone et iPad**, en portrait comme en paysage, 60 fps.
+- Tout s'adapte à la taille d'écran, sans mise en page figée :
+  - la portion de globe visible en partie est calée sur la plus petite dimension de l'écran, pour que le jeu ait la même difficulté sur téléphone et sur tablette ;
+  - le HUD et la mini-carte se placent dans les coins en respectant les marges de sécurité (encoche, barre d'accueil) ;
+  - le contrôle ne dépend que de la direction du glissé, jamais de sa longueur en pixels.
 - Entrées : Pointer Events, `touch-action: none`, pas de zoom, de scroll ni de sélection.
 - Boucle à **pas de temps fixe** avec rendu interpolé ; la simulation ne dépend pas du framerate.
 - Tous les paramètres de gameplay dans `src/config.ts`.
