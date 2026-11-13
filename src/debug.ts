@@ -12,9 +12,10 @@ type NumericKey = {
 
 /** Curseurs de réglage : [clé de config, libellé, min, max, pas]. */
 const SLIDERS: [NumericKey, string, number, number, number][] = [
+  ['viewSpanDeg', 'ZOOM : zone visible (°)', 6, 60, 1],
   ['pawnSpeed', 'Vitesse pion (°/s)', 1, 20, 0.25],
+  ['seaSpeedFactor', 'Vitesse en mer (×)', 1, 4, 0.1],
   ['turnRate', 'Virage (°/s)', 60, 1800, 20],
-  ['viewSpanDeg', 'Zone visible (°)', 6, 60, 1],
   ['cameraTiltDeg', 'Inclinaison (°)', 0, 70, 1],
   ['fovDeg', 'Focale (°)', 25, 80, 1],
   ['pawnSizeDeg', 'Taille pion (°)', 0.3, 3, 0.1],

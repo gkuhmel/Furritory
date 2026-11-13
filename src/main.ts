@@ -137,7 +137,13 @@ async function start(): Promise<void> {
           flipRuleShown = true;
           hud.show(`À ${Math.round(config.flipThreshold * 100)} %, le pays bascule en entier`);
         } else {
-          hud.show(event.gainedCells > 0 ? 'Zone capturée !' : 'Boucle fermée');
+          hud.show(
+            event.gainedCells > 0
+              ? 'Zone capturée !'
+              : event.enclosed
+                ? 'Boucle fermée'
+                : 'Rien d\'entouré : rentre dans le même morceau de ta zone',
+          );
         }
       } else if (event.type === 'death') {
         territoryChanged = true;

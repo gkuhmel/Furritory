@@ -35,6 +35,10 @@ export class Territory {
   lastGain = 0;
   /** Pays qui ont basculé lors de la dernière capture. */
   readonly lastFlips: number[] = [];
+  /** Vrai si la dernière capture a réellement entouré quelque chose. */
+  lastEnclosed = false;
+  /** Pays où le joueur a gagné des cases pendant la capture en cours (1 = touché). */
+  private readonly touched = new Uint8Array(256);
   /** Joueur dont la traînée vient d'être coupée par le dernier `step` (0 = personne). */
   lastCut = 0;
 
@@ -216,6 +220,7 @@ export class Territory {
     this.owned[player * 256 + p] = (this.owned[player * 256 + p] ?? 0) + 1;
     this.totals[before] = (this.totals[before] ?? 0) - 1;
     this.totals[player] = (this.totals[player] ?? 0) + 1;
+    this.touched[p] = 1;
     this.lastGain++;
     this.owner[cell] = player;
     this.dirty = true;
@@ -253,6 +258,9 @@ export class Territory {
     this.lastFlips.length = 0;
     for (let p = 0; p < this.countryCount; p++) {
       const size = this.countrySize[p] ?? 0;
+      // Seuls les pays où il vient de gagner du terrain peuvent basculer : un pays entamé par un
+      // rival n'est pas repris en entier « tout seul » à la capture suivante de son propriétaire.
+      if (this.touched[p] !== 1) continue;
       const mine = this.owned[player * 256 + p] ?? 0;
       if (mine === size || mine < size * config.flipThreshold) continue;
       this.claimCountry(player, p);
@@ -332,6 +340,7 @@ export class Territory {
     const { near, owner, trail, label, queue } = this;
     const mine = this.trails[player] ?? [];
     this.lastGain = 0;
+    this.touched.fill(0);
     label.fill(0);
     // Par région : début et fin de ses cases dans `queue`, et si elle est « le reste du monde ».
     const starts: number[] = [0];
@@ -394,9 +403,14 @@ export class Territory {
         if (owner[c] !== SEA) this.setOwner(c, player);
       }
     }
-    // La traînée elle-même devient du territoire, sauf en mer.
-    for (const t of mine) {
-      if (owner[t] !== SEA) this.setOwner(t, player);
+    // La traînée elle-même devient du territoire (sauf en mer), mais seulement si elle a entouré
+    // quelque chose. Une traînée qui relie deux morceaux séparés de sa zone n'entoure rien : la
+    // garder laisserait de fins rubans de couleur en travers de la carte.
+    this.lastEnclosed = outside.includes(false, 1);
+    if (this.lastEnclosed) {
+      for (const t of mine) {
+        if (owner[t] !== SEA) this.setOwner(t, player);
+      }
     }
     this.clearTrail(player);
     this.flipCountries(player);

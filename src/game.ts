@@ -4,7 +4,7 @@ import { countryNames } from './country-names';
 import { dirToCell } from './cube-grid';
 import type { Input } from './input';
 import { Pawn } from './pawn';
-import type { Territory } from './territory';
+import { SEA, type Territory } from './territory';
 
 export interface Player {
   /** Numéro dans la grille de territoire, à partir de 1. Le joueur humain est le 1. */
@@ -24,7 +24,7 @@ export interface Player {
 /** Ce qui vient de se passer, à destination de l'affichage. */
 export type GameEvent =
   | { type: 'trail'; player: number }
-  | { type: 'capture'; player: number; flips: number[]; gainedCountries: number; gainedCells: number }
+  | { type: 'capture'; player: number; flips: number[]; gainedCountries: number; gainedCells: number; enclosed: boolean }
   | { type: 'death'; player: number; by: number }
   | { type: 'respawn'; player: number }
   | { type: 'end' };
@@ -150,6 +150,8 @@ export class Game {
 
       if (p.bot) updateBot(p.bot, p, this.players, t, dt);
       else if (this.input.hasDir) p.pawn.steer(this.input.dirX, this.input.dirY);
+      // En mer, on ne capture rien : on la traverse plus vite pour ne pas s'y ennuyer.
+      p.pawn.terrainFactor = t.country[this.cellOf(p)] === SEA ? config.seaSpeedFactor : 1;
       p.pawn.update(dt);
 
       const countriesBefore = t.countriesOwned(p.id);
@@ -170,6 +172,7 @@ export class Game {
           flips: [...t.lastFlips],
           gainedCountries: t.countriesOwned(p.id) - countriesBefore,
           gainedCells: t.lastGain,
+          enclosed: t.lastEnclosed,
         });
         // Un joueur à qui il ne reste plus une seule case est éliminé.
         for (const other of this.players) {

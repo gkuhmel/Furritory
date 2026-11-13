@@ -21,6 +21,8 @@ export class Pawn {
 
   /** Multiplicateur de vitesse propre à ce pion (les rivaux sont un peu plus lents). */
   speedFactor = 1;
+  /** Multiplicateur de vitesse du terrain sous le pion (la mer se traverse plus vite). */
+  terrainFactor = 1;
 
   /** Cap visé, en direction d'écran (y vers le bas). */
   private wantX = 0;
@@ -94,7 +96,7 @@ export class Pawn {
 
     // Avance le long du grand cercle : la même rotation transporte position, cap et repère écran.
     this.axis.crossVectors(this.pos, this.heading).normalize();
-    const step = config.pawnSpeed * this.speedFactor * DEG * dt;
+    const step = config.pawnSpeed * this.speedFactor * this.terrainFactor * DEG * dt;
     this.pos.applyAxisAngle(this.axis, step).normalize();
     this.heading.applyAxisAngle(this.axis, step);
     this.up.applyAxisAngle(this.axis, step);

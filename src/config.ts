@@ -90,6 +90,9 @@ export const config = {
   /** Durée du fondu rouge à la mort (s). */
   deathFlashTime: 0.6,
 
+  /** Vitesse en mer par rapport à la terre : la traversée est rapide, mais la traînée reste exposée. */
+  seaSpeedFactor: 2,
+
   // --- Partie ---
   /** Durée d'une partie (s). */
   gameDuration: 240,
@@ -98,7 +101,7 @@ export const config = {
   /** Un pays doit avoir au moins ce nombre de cases pour servir de point de réapparition. */
   minSpawnCells: 40,
   /** Pays de départ du joueur, puis des rivaux (noms de src/country-names.ts). */
-  startCountries: ['France', 'Turquie', 'Nigeria', 'Inde', 'Brésil', 'Mexique'],
+  startCountries: ['France', 'Espagne', 'Pologne', 'Algérie', 'Turquie', 'Brésil'],
   /** Nom affiché de chaque joueur, dans l'ordre de `playerColors`. */
   playerNames: ['Toi', 'Bleu', 'Vert', 'Violet', 'Jaune', 'Turquoise'],
 

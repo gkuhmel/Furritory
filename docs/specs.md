@@ -130,9 +130,9 @@ Ces valeurs fixent l'échelle ressentie du monde : ce sont les premières à ré
 ## 7. L'océan
 
 - Le pion peut aller en mer : la figurine monte dans une petite barque en bois.
-- En mer, vitesse multipliée par `seaSpeedFactor` (0,8) et la traînée continue : elle reste exposée jusqu'au retour sur son territoire.
+- En mer, vitesse multipliée par `seaSpeedFactor` (2) : la mer ne rapporte rien, on la traverse vite. La traînée continue et reste exposée jusqu'au retour dans sa zone.
 - On ne capture pas de mer. Une boucle peut passer par la mer pour entourer une île ou une côte.
-- Conséquence voulue : changer de continent est un pari.
+- Conséquence voulue : changer de continent est un pari, mais pas une attente.
 
 ---
 
