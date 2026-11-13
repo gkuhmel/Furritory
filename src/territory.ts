@@ -25,13 +25,18 @@ export class Territory {
   /** Vrai si la table `owner` a changé depuis le dernier envoi au GPU. */
   dirty = true;
 
-  /** Cases de la traînée du joueur, dans l'ordre de passage. */
-  private readonly trailCells: number[] = [];
-  private lastCell = -1;
+  /** Cases de la traînée de chaque joueur, dans l'ordre de passage (indice = numéro du joueur). */
+  private readonly trails: number[][] = [];
+  /** Dernière case vue pour chaque joueur. */
+  private readonly lastCells: number[] = [];
+  /** Cases de terre possédées par chaque joueur. */
+  private readonly totals: number[] = [];
   /** Cases de terre gagnées lors de la dernière capture. */
   lastGain = 0;
   /** Pays qui ont basculé lors de la dernière capture. */
   readonly lastFlips: number[] = [];
+  /** Joueur dont la traînée vient d'être coupée par le dernier `step` (0 = personne). */
+  lastCut = 0;
 
   /**
    * État de chaque pays pour le rendu : 0 = à personne, 1..6 = entièrement à ce joueur,
@@ -91,6 +96,11 @@ export class Territory {
       fill[p] = at + 1;
     }
     this.owned = new Int32Array((config.playerColors.length + 1) * 256);
+    for (let who = 0; who <= config.playerColors.length; who++) {
+      this.trails.push([]);
+      this.lastCells.push(-1);
+      this.totals.push(0);
+    }
 
     this.near = new Int32Array(this.cells * 4);
     for (let c = 0; c < this.cells; c++) {
@@ -165,8 +175,37 @@ export class Territory {
     }
   }
 
-  get trailLength(): number {
-    return this.trailCells.length;
+  /** Longueur de la traînée en cours d'un joueur, en cases. */
+  trailLength(player: number): number {
+    return this.trails[player]?.length ?? 0;
+  }
+
+  /** Case du milieu de la traînée d'un joueur, ou -1 s'il n'en a pas. */
+  trailMiddle(player: number): number {
+    const trail = this.trails[player];
+    if (!trail || trail.length === 0) return -1;
+    return trail[trail.length >> 1] ?? -1;
+  }
+
+  /** Nombre de cases de terre possédées par un joueur. */
+  totalOwned(player: number): number {
+    return this.totals[player] ?? 0;
+  }
+
+  /** Remet tout à zéro : plus aucun propriétaire, plus aucune traînée. */
+  reset(): void {
+    for (let c = 0; c < this.cells; c++) this.owner[c] = this.country[c] === SEA ? SEA : 0;
+    this.trail.fill(0);
+    this.owned.fill(0);
+    for (let who = 0; who < this.trails.length; who++) {
+      const trail = this.trails[who];
+      if (trail) trail.length = 0;
+      this.lastCells[who] = -1;
+      this.totals[who] = 0;
+    }
+    this.lastFlips.length = 0;
+    this.lastCut = 0;
+    this.dirty = true;
   }
 
   private setOwner(cell: number, player: number): void {
@@ -175,6 +214,8 @@ export class Territory {
     const p = this.country[cell] ?? SEA;
     this.owned[before * 256 + p] = (this.owned[before * 256 + p] ?? 0) - 1;
     this.owned[player * 256 + p] = (this.owned[player * 256 + p] ?? 0) + 1;
+    this.totals[before] = (this.totals[before] ?? 0) - 1;
+    this.totals[player] = (this.totals[player] ?? 0) + 1;
     this.lastGain++;
     this.owner[cell] = player;
     this.dirty = true;
@@ -224,43 +265,62 @@ export class Territory {
     const country = this.country[cell];
     if (country === undefined || country === SEA) return;
     this.claimCountry(player, country);
-    this.lastCell = cell;
+    this.lastCells[player] = cell;
   }
 
-  /** Retire au joueur tout son territoire et sa traînée (mort). */
+  /** Retire au joueur tout son territoire et sa traînée (mort) : ses terres redeviennent neutres. */
   wipe(player: number): void {
-    for (let c = 0; c < this.cells; c++) {
-      if (this.owner[c] === player) this.setOwner(c, 0);
+    if ((this.totals[player] ?? 0) > 0) {
+      for (let c = 0; c < this.cells; c++) {
+        if (this.owner[c] === player) this.setOwner(c, 0);
+      }
     }
-    this.clearTrail();
-    this.lastCell = -1;
+    this.clearTrail(player);
+    this.lastCells[player] = -1;
   }
 
-  private clearTrail(): void {
-    for (const c of this.trailCells) this.trail[c] = 0;
-    this.trailCells.length = 0;
+  private clearTrail(player: number): void {
+    const trail = this.trails[player];
+    if (!trail) return;
+    for (const c of trail) {
+      if (this.trail[c] === player) this.trail[c] = 0;
+    }
+    trail.length = 0;
   }
 
-  /** À appeler à chaque pas de simulation avec la case où se trouve le pion. */
+  /**
+   * À appeler à chaque pas de simulation avec la case où se trouve le pion du joueur.
+   * Si le pion marche sur la traînée d'un autre, celui-ci est coupé : voir `lastCut`.
+   */
   step(player: number, cell: number): StepEvent {
-    if (cell === this.lastCell) return 'none';
-    this.lastCell = cell;
+    this.lastCut = 0;
+    if (cell === this.lastCells[player]) return 'none';
+    this.lastCells[player] = cell;
+    const trail = this.trails[player];
+    if (!trail) return 'none';
+
+    const other = this.trail[cell] ?? 0;
+    if (other !== 0 && other !== player) {
+      // Traînée d'un rival : il est coupé. Sa traînée disparaît tout de suite, la case est libre.
+      this.lastCut = other;
+      this.clearTrail(other);
+    }
 
     if (this.owner[cell] === player) {
-      if (this.trailCells.length === 0) return 'none';
+      if (trail.length === 0) return 'none';
       this.capture(player);
       return 'capture';
     }
 
     if (this.trail[cell] === player) {
       // Les toutes dernières cases sont tolérées : on ne meurt pas d'un simple tremblement.
-      const index = this.trailCells.lastIndexOf(cell);
-      if (this.trailCells.length - 1 - index > config.trailGraceCells) return 'death';
+      const index = trail.lastIndexOf(cell);
+      if (trail.length - 1 - index > config.trailGraceCells) return 'death';
       return 'none';
     }
 
     this.trail[cell] = player;
-    this.trailCells.push(cell);
+    trail.push(cell);
     return 'trail';
   }
 
@@ -268,52 +328,81 @@ export class Territory {
    * Ferme la boucle : la traînée et tout ce qu'elle enferme passent au joueur.
    * Sur une sphère il n'y a pas d'« extérieur » : parmi les régions que la traînée sépare,
    * la plus grande est le reste du monde, toutes les autres sont capturées.
+   *
+   * Pour ne pas parcourir le monde entier à chaque capture, l'exploration d'une région s'arrête
+   * dès qu'elle dépasse `maxCaptureCells` : elle est alors forcément « le reste du monde ».
    */
   private capture(player: number): void {
     const { near, owner, trail, label, queue } = this;
+    const mine = this.trails[player] ?? [];
     this.lastGain = 0;
     label.fill(0);
-    const sizes: number[] = [0];
+    // Par région : début et fin de ses cases dans `queue`, et si elle est « le reste du monde ».
+    const starts: number[] = [0];
+    const ends: number[] = [0];
+    const outside: boolean[] = [false];
+    const cap = config.maxCaptureCells;
+    let tail = 0;
 
-    for (const t of this.trailCells) {
+    for (const t of mine) {
       for (let k = 0; k < 4; k++) {
         const seed = near[t * 4 + k] ?? 0;
         if (label[seed] !== 0 || owner[seed] === player || trail[seed] === player) continue;
-        // Nouvelle région : remplissage par diffusion.
-        const id = sizes.length;
-        let head = 0;
-        let tail = 0;
+        // Nouvelle région : remplissage par diffusion, à la suite dans `queue`.
+        const id = starts.length;
+        const start = tail;
+        let head = tail;
+        let isOutside = false;
         queue[tail++] = seed;
         label[seed] = id;
         while (head < tail) {
           const c = queue[head++] ?? 0;
           for (let d = 0; d < 4; d++) {
             const o = near[c * 4 + d] ?? 0;
-            if (label[o] !== 0 || owner[o] === player || trail[o] === player) continue;
+            const seen = label[o] ?? 0;
+            if (seen !== 0) {
+              // Rencontre d'une région déjà classée « reste du monde » : c'est la même.
+              if (seen !== id && outside[seen]) isOutside = true;
+              continue;
+            }
+            if (owner[o] === player || trail[o] === player) continue;
             label[o] = id;
             queue[tail++] = o;
           }
+          if (isOutside || tail - start > cap) {
+            isOutside = true;
+            break;
+          }
         }
-        sizes.push(tail);
+        starts.push(start);
+        ends.push(tail);
+        outside.push(isOutside);
       }
     }
 
-    let outside = 0;
-    for (let id = 1; id < sizes.length; id++) {
-      if ((sizes[id] ?? 0) > (sizes[outside] ?? 0)) outside = id;
+    // Si aucune région n'a été tronquée, la plus grande est le reste du monde.
+    if (!outside.includes(true)) {
+      let largest = 0;
+      for (let id = 1; id < starts.length; id++) {
+        if ((ends[id] ?? 0) - (starts[id] ?? 0) > (ends[largest] ?? 0) - (starts[largest] ?? 0)) largest = id;
+      }
+      if (starts.length > 2) outside[largest] = true;
+      else if (starts.length === 2) outside[1] = true;
     }
 
-    if (sizes.length > 2) {
-      for (let c = 0; c < this.cells; c++) {
-        const id = label[c] ?? 0;
-        if (id !== 0 && id !== outside && owner[c] !== SEA) this.setOwner(c, player);
+    for (let id = 1; id < starts.length; id++) {
+      if (outside[id]) continue;
+      const end = ends[id] ?? 0;
+      for (let i = starts[id] ?? 0; i < end; i++) {
+        const c = queue[i] ?? 0;
+        if (owner[c] !== SEA) this.setOwner(c, player);
       }
     }
     // La traînée elle-même devient du territoire, sauf en mer.
-    for (const t of this.trailCells) {
+    for (const t of mine) {
       if (owner[t] !== SEA) this.setOwner(t, player);
     }
-    this.clearTrail();
+    this.clearTrail(player);
     this.flipCountries(player);
   }
 

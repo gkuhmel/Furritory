@@ -22,7 +22,7 @@ body {
   inset: 0;
 }
 
-canvas {
+#game {
   position: absolute;
   inset: 0;
   display: block;

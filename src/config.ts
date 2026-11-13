@@ -74,6 +74,11 @@ export const config = {
   // --- Territoire ---
   /** Couleur de zone par joueur (joueur 1 en premier). */
   playerColors: [0xe2572f, 0x3f7fd1, 0x49a35a, 0x9a59c4, 0xe0a81f, 0x2fb5b0],
+  /**
+   * Taille max d'une région capturable, en cases (80 000 ≈ 20 % du globe). Au-delà, la région
+   * est considérée comme « le reste du monde » : borne le coût d'une capture.
+   */
+  maxCaptureCells: 80000,
   /** Part d'un pays à posséder pour qu'il bascule en entier. */
   flipThreshold: 0.5,
   /** Durée de l'éclat blanc d'un pays qui bascule (s). */
@@ -87,11 +92,51 @@ export const config = {
   /** Durée du fondu rouge à la mort (s). */
   deathFlashTime: 0.6,
 
+  // --- Partie ---
+  /** Durée d'une partie (s). */
+  gameDuration: 240,
+  /** Délai avant de réapparaître après une mort (s). */
+  respawnDelay: 2,
+  /** Un pays doit avoir au moins ce nombre de cases pour servir de point de réapparition. */
+  minSpawnCells: 40,
+  /** Pays de départ du joueur, puis des rivaux (noms de src/country-names.ts). */
+  startCountries: ['France', 'Turquie', 'Nigeria', 'Inde', 'Brésil', 'Mexique'],
+  /** Nom affiché de chaque joueur, dans l'ordre de `playerColors`. */
+  playerNames: ['Toi', 'Bleu', 'Vert', 'Violet', 'Jaune', 'Turquoise'],
+
+  // --- Rivaux ---
+  /** Tempérament de chaque rival : taille de boucle (degrés), chasseur ou non. */
+  botProfiles: [
+    { loopMin: 2.5, loopMax: 5, hunter: false },
+    { loopMin: 5, loopMax: 10, hunter: false },
+    { loopMin: 3, loopMax: 6, hunter: true },
+    { loopMin: 2.5, loopMax: 5, hunter: false },
+    { loopMin: 5, loopMax: 10, hunter: false },
+  ],
+  /** Vitesse des rivaux par rapport au joueur. */
+  botSpeedFactor: 0.8,
+  /** Pause dans sa zone entre deux boucles : durée min et max (s). */
+  botRestMin: 1.5,
+  botRestMax: 4,
+  /** Un rival rentre chez lui si un autre pion approche à moins de cette distance (degrés). */
+  botFearDeg: 5,
+  /** Distance à laquelle un chasseur repère une traînée à couper (degrés). */
+  botHuntDeg: 10,
+  /** Portée de chasse supplémentaire par pays possédé par la cible : le plus gros est la cible. */
+  botHuntPerCountryDeg: 1.5,
+  /** Durée max hors de sa zone avant de rentrer coûte que coûte (s). */
+  botMaxOutTime: 25,
+  /** Distance à laquelle un rival considère un point de passage comme atteint (degrés). */
+  botReachDeg: 0.6,
+
+  // --- Mini-carte ---
+  minimapWidth: 132,
+  minimapRefresh: 0.4,
+
   // --- Empreintes de la traînée ---
   footprintSpacingDeg: 0.3,
   footprintSizeDeg: 0.24,
   /** Écart latéral gauche/droite des pattes (degrés). */
   footprintOffsetDeg: 0.09,
-  footprintColor: 0x7a2412,
   footprintMax: 4000,
 };

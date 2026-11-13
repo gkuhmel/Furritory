@@ -138,10 +138,17 @@ Ces valeurs fixent l'échelle ressentie du monde : ce sont les premières à ré
 
 ## 8. Les rivaux
 
-- 5 rivaux, chacun un animal différent, pays de départ répartis sur des continents différents.
-- Comportement de base : sortir, faire une boucle de taille tirée au hasard, rentrer. Rentrer plus vite si un pion ennemi approche de sa traînée.
-- Trois tempéraments par réglage de paramètres : prudent (petites boucles), expansionniste (grandes boucles), chasseur (vise les traînées proches).
-- Ils doivent être battables par un débutant : leur rôle est de rendre la carte vivante.
+- 5 rivaux, chacun d'une couleur, avec un pays de départ sur un continent différent (`startCountries`).
+- Règles communes à tous les pions :
+  - marcher sur la traînée d'un rival l'élimine ; on est donc en sécurité dans sa zone, où l'on ne laisse pas de traînée ;
+  - une boucle fermée prend tout ce qu'elle enferme, y compris le terrain des autres ;
+  - un joueur à qui il ne reste plus une case est éliminé ;
+  - à la mort, ses terres redeviennent neutres et il réapparaît après `respawnDelay` dans un pays neutre.
+- Comportement : sortir de sa zone, tracer une boucle rectangulaire de taille tirée au hasard, rentrer, faire une pause chez soi, recommencer. Il rentre plus tôt si un pion approche.
+- Trois tempéraments par réglage (`botProfiles`) : prudent (petites boucles), expansionniste (grandes boucles), chasseur (va couper les traînées à portée ; sa portée grandit avec le nombre de pays de la cible, donc le plus gros est la cible).
+- Ils sont un peu plus lents que le joueur (`botSpeedFactor`) : leur rôle est de rendre la carte vivante, pas de gagner.
+- Partie de `gameDuration` secondes, classement final au nombre de pays, record gardé en local.
+- Mini-carte en bas à gauche : planisphère, zones de chacun, position des pions.
 
 ---
 

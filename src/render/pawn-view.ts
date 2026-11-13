@@ -9,9 +9,9 @@ const DEG = Math.PI / 180;
  * indique le sens de marche. Les animaux arrivent à l'étape 8.
  * Modélisé avec +Y vers le ciel et +Z vers l'avant, pour une taille de 1.
  */
-function buildFigurine(): THREE.Group {
+function buildFigurine(color: number): THREE.Group {
   const g = new THREE.Group();
-  const paint = new THREE.MeshLambertMaterial({ color: config.pawnColor });
+  const paint = new THREE.MeshLambertMaterial({ color });
   const wood = new THREE.MeshLambertMaterial({ color: 0xf3e2c0 });
 
   const base = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.5, 0.16, 20), paint);
@@ -29,7 +29,7 @@ function buildFigurine(): THREE.Group {
 
 export class PawnView {
   readonly group = new THREE.Group();
-  private readonly figurine = buildFigurine();
+  private readonly figurine: THREE.Group;
   private readonly shadow: THREE.Mesh;
 
   private readonly pos = new THREE.Vector3();
@@ -37,7 +37,8 @@ export class PawnView {
   private readonly side = new THREE.Vector3();
   private readonly basis = new THREE.Matrix4();
 
-  constructor() {
+  constructor(color: number) {
+    this.figurine = buildFigurine(color);
     // Ombre de contact : simple disque sombre posé au sol.
     this.shadow = new THREE.Mesh(
       new THREE.CircleGeometry(0.6, 24),

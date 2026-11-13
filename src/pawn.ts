@@ -19,6 +19,9 @@ export class Pawn {
   readonly prevHeading = new THREE.Vector3();
   readonly prevUp = new THREE.Vector3();
 
+  /** Multiplicateur de vitesse propre à ce pion (les rivaux sont un peu plus lents). */
+  speedFactor = 1;
+
   /** Cap visé, en direction d'écran (y vers le bas). */
   private wantX = 0;
   private wantY = -1;
@@ -44,6 +47,31 @@ export class Pawn {
     this.savePrev();
   }
 
+  /** Replace le pion en un point du globe, avec un cap donné par un angle (radians) depuis le nord. */
+  resetAt(x: number, y: number, z: number, bearing = 0): void {
+    this.pos.set(x, y, z).normalize();
+    // Près d'un pôle, le nord n'est plus défini : on prend un autre axe de référence.
+    if (Math.abs(this.pos.y) > 0.999) this.up.set(1, 0, 0);
+    else this.up.set(0, 1, 0);
+    this.up.addScaledVector(this.pos, -this.up.dot(this.pos)).normalize();
+    this.heading.copy(this.up).applyAxisAngle(this.pos, -bearing);
+    this.right.crossVectors(this.up, this.pos);
+    this.wantX = this.heading.dot(this.right);
+    this.wantY = -this.heading.dot(this.up);
+    this.savePrev();
+  }
+
+  /** Donne un nouveau cap sous forme de direction dans le monde (tangente au globe). */
+  steerWorld(dir: THREE.Vector3): void {
+    this.right.crossVectors(this.up, this.pos);
+    const x = dir.dot(this.right);
+    const y = -dir.dot(this.up);
+    const len = Math.hypot(x, y);
+    if (len < 1e-6) return;
+    this.wantX = x / len;
+    this.wantY = y / len;
+  }
+
   /** Donne un nouveau cap, en direction d'écran normalisée. */
   steer(dirX: number, dirY: number): void {
     this.wantX = dirX;
@@ -66,7 +94,7 @@ export class Pawn {
 
     // Avance le long du grand cercle : la même rotation transporte position, cap et repère écran.
     this.axis.crossVectors(this.pos, this.heading).normalize();
-    const step = config.pawnSpeed * DEG * dt;
+    const step = config.pawnSpeed * this.speedFactor * DEG * dt;
     this.pos.applyAxisAngle(this.axis, step).normalize();
     this.heading.applyAxisAngle(this.axis, step);
     this.up.applyAxisAngle(this.axis, step);

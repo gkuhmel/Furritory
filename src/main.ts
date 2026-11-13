@@ -5,19 +5,40 @@ import { config } from './config';
 import { countryNames } from './country-names';
 import { dirToCell } from './cube-grid';
 import { FollowCamera } from './follow-camera';
+import { Game, HUMAN } from './game';
 import { Hud } from './hud';
 import { Input } from './input';
 import { startLoop, type LoopStats } from './loop';
-import { Pawn } from './pawn';
 import { buildGlobe } from './render/globe';
+import { Minimap } from './render/minimap';
 import { PawnView } from './render/pawn-view';
 import { ShareLabels } from './render/share-labels';
 import { FootprintsView, TerritoryView } from './render/territory-view';
 import { SEA, Territory } from './territory';
 import { loadWorld } from './world';
 
-/** Numéro du joueur humain dans la grille de territoire. */
-const PLAYER = 1;
+const BEST_KEY = 'furritory.best';
+
+function loadBest(): number {
+  try {
+    return Number(localStorage.getItem(BEST_KEY)) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+function saveBest(value: number): void {
+  try {
+    localStorage.setItem(BEST_KEY, String(value));
+  } catch {
+    // Stockage indisponible (navigation privée) : le record ne sera pas gardé.
+  }
+}
+
+/** Couleur d'empreinte : la couleur du joueur, assombrie. */
+function darker(color: number): number {
+  return new THREE.Color(color).multiplyScalar(0.5).getHex();
+}
 
 async function start(): Promise<void> {
   const canvas = document.getElementById('game') as HTMLCanvasElement;
@@ -40,13 +61,14 @@ async function start(): Promise<void> {
   const follow = new FollowCamera(camera);
   const input = new Input(canvas);
 
-  const pawn = new Pawn(config.startLon, config.startLat);
-  const pawnView = new PawnView();
-  const footprints = new FootprintsView();
-  scene.add(footprints.mesh, pawnView.group);
-
-  const cellOf = (): number => dirToCell(territory.n, pawn.pos.x, pawn.pos.y, pawn.pos.z);
-  territory.claimCountryAt(PLAYER, cellOf());
+  const game = new Game(territory, input);
+  const human = game.human;
+  const views = game.players.map((p) => {
+    const pawnView = new PawnView(p.color);
+    const footprints = new FootprintsView(darker(p.color));
+    scene.add(footprints.mesh, pawnView.group);
+    return { player: p, pawnView, footprints };
+  });
 
   // Fondu rouge plein écran à la mort.
   const deathFlash = document.createElement('div');
@@ -54,32 +76,32 @@ async function start(): Promise<void> {
     'position:fixed;inset:0;background:#b3261e;opacity:0;pointer-events:none;z-index:5';
   document.body.appendChild(deathFlash);
   let deathFlashLevel = 0;
-  const hud = new Hud();
-  /** Vrai tant que la consigne « reviens dans ta zone » est affichée. */
-  let trailHint = false;
-  /** La consigne n'est plus rappelée une fois que le joueur a réussi une capture. */
-  let hasCaptured = false;
 
-  // Pays sous le pion et score : rafraîchis seulement quand ils changent.
-  let hudCell = -1;
-  const labels = new ShareLabels(territory, PLAYER);
+  const hud = new Hud();
+  const labels = new ShareLabels(territory, HUMAN);
+  const minimap = new Minimap(territory, game.players);
+  /** La consigne « reviens dans ta zone » n'est plus rappelée après une première capture. */
+  let hasCaptured = false;
   /** La règle des 50 % est expliquée une fois, au premier pays entamé. */
   let flipRuleShown = false;
-  let shownScore = 0;
-  function refreshHud(force = false): void {
-    const cell = cellOf();
+  /** Instant de la fin de partie : on attend un peu avant d'accepter « rejouer ». */
+  let endedAt = 0;
+
+  // Pays sous le pion : rafraîchi seulement quand il change.
+  let hudCell = -1;
+  function refreshCountry(force = false): void {
+    const p = human.pawn.pos;
+    const cell = dirToCell(territory.n, p.x, p.y, p.z);
     if (!force && cell === hudCell) return;
     hudCell = cell;
     const country = territory.country[cell] ?? SEA;
     hud.setCountry(country === SEA ? '' : (countryNames[country] ?? ''));
   }
+  let shownSecond = -1;
   function refreshScore(): void {
-    shownScore = territory.countriesOwned(PLAYER);
-    hud.setScore(shownScore, territory.countryCount);
-    refreshHud(true);
-    labels.refresh();
+    shownSecond = Math.ceil(game.timeLeft);
+    hud.setScore(territory.countriesOwned(HUMAN), game.timeLeft);
   }
-  refreshScore();
 
   /** « A », « A et B », « A, B et C », ou un simple compte au-delà. */
   function flipMessage(flips: readonly number[]): string {
@@ -88,6 +110,88 @@ async function start(): Promise<void> {
     if (names.length > 3) return `${names.length} pays basculent !`;
     return `${names.slice(0, -1).join(', ')} et ${names[names.length - 1]} basculent !`;
   }
+
+  function nameOf(id: number): string {
+    return game.players[id - 1]?.name ?? '?';
+  }
+
+  /** Traduit les événements de la partie en messages et en effets. */
+  function handleEvents(): void {
+    if (game.events.length === 0) return;
+    let territoryChanged = false;
+    for (const event of game.events) {
+      if (event.type === 'trail') {
+        if (event.player === HUMAN && !hasCaptured) hud.show('Reviens dans ta zone pour fermer la boucle', true);
+      } else if (event.type === 'capture') {
+        territoryChanged = true;
+        if (event.player !== HUMAN) continue;
+        territoryView.flash();
+        const plus = event.gainedCountries > 0 ? ` +${event.gainedCountries} pays` : '';
+        if (event.gainedCells > 0) hasCaptured = true;
+        if (event.flips.length > 0) {
+          territoryView.flashCountries(event.flips);
+          hud.show(flipMessage(event.flips) + plus);
+        } else if (event.gainedCountries > 0) {
+          hud.show(`Conquis !${plus}`);
+        } else if (!flipRuleShown && event.gainedCells > 0) {
+          flipRuleShown = true;
+          hud.show(`À ${Math.round(config.flipThreshold * 100)} %, le pays bascule en entier`);
+        } else {
+          hud.show(event.gainedCells > 0 ? 'Zone capturée !' : 'Boucle fermée');
+        }
+      } else if (event.type === 'death') {
+        territoryChanged = true;
+        if (event.player === HUMAN) {
+          deathFlashLevel = 1;
+          hasCaptured = false;
+          hud.show(
+            event.by === HUMAN ? 'Tu as coupé ta propre traînée' : `${nameOf(event.by)} a coupé ta traînée !`,
+          );
+        } else if (event.by === HUMAN) {
+          hud.show(`Tu as éliminé ${nameOf(event.player)} !`);
+        }
+      } else if (event.type === 'respawn') {
+        territoryChanged = true;
+      } else if (event.type === 'end') {
+        const countries = territory.countriesOwned(HUMAN);
+        const previous = loadBest();
+        const isRecord = countries > previous;
+        if (isRecord) saveBest(countries);
+        hud.hide();
+        hud.showEnd(
+          game.ranking().map((r) => ({
+            name: r.player.name,
+            color: `#${r.player.color.toString(16).padStart(6, '0')}`,
+            countries: r.countries,
+            me: r.player.id === HUMAN,
+          })),
+          Math.max(previous, countries),
+          isRecord,
+        );
+        endedAt = performance.now();
+      }
+    }
+    game.events.length = 0;
+    if (territoryChanged) {
+      refreshScore();
+      labels.refresh();
+    }
+  }
+  handleEvents();
+  refreshScore();
+  refreshCountry(true);
+
+  // Écran de fin : une touche relance une partie (après un court délai, pour éviter un appui involontaire).
+  canvas.addEventListener('pointerdown', () => {
+    if (!game.over || performance.now() - endedAt < 800) return;
+    game.restart();
+    hud.hideEnd();
+    hasCaptured = false;
+    for (const v of views) v.footprints.clear();
+    handleEvents();
+    refreshScore();
+    refreshCountry(true);
+  });
 
   /** État de l'application. `globeView` : rotation libre du globe (menus, debug), jeu en pause. */
   const app = { globeView: false };
@@ -128,13 +232,13 @@ async function start(): Promise<void> {
         stats,
         renderer,
         app,
-        pawn,
+        human.pawn,
         territory,
         world.countries.length,
         globe.triangles,
       );
       onFrame = () => panel.frame();
-      Object.assign(window, { pawn, config, territory, countryNames, refreshScore });
+      Object.assign(window, { pawn: human.pawn, config, territory, countryNames, game });
     });
   }
 
@@ -143,49 +247,15 @@ async function start(): Promise<void> {
       orbit.update(dt, input);
       return;
     }
-    if (input.hasDir) pawn.steer(input.dirX, input.dirY);
-    pawn.update(dt);
-
-    const scoreBefore = shownScore;
-    const event = territory.step(PLAYER, cellOf());
-    if (event === 'trail' && !trailHint && !hasCaptured) {
-      // La règle de base : c'est le retour chez soi qui ferme la boucle.
-      trailHint = true;
-      hud.show('Reviens dans ta zone pour fermer la boucle', true);
-    } else if (event === 'capture') {
-      trailHint = false;
-      footprints.clear();
-      territoryView.flash();
-      if (territory.lastGain > 0) hasCaptured = true;
-      const gained = territory.countriesOwned(PLAYER) - scoreBefore;
-      const plus = gained > 0 ? ` +${gained} pays` : '';
-      if (territory.lastFlips.length > 0) {
-        territoryView.flashCountries(territory.lastFlips);
-        hud.show(flipMessage(territory.lastFlips) + plus);
-      } else if (gained > 0) {
-        hud.show(`Conquis !${plus}`);
-      } else if (!flipRuleShown && territory.lastGain > 0) {
-        flipRuleShown = true;
-        hud.show(`À ${Math.round(config.flipThreshold * 100)} %, le pays bascule en entier`);
-      } else {
-        hud.show(territory.lastGain > 0 ? 'Zone capturée !' : 'Boucle fermée');
-      }
-      refreshScore();
-    } else if (event === 'death') {
-      // Mort : on perd tout et on repart du pays de départ.
-      trailHint = false;
-      territory.wipe(PLAYER);
-      footprints.clear();
-      pawn.reset(config.startLon, config.startLat);
-      input.resetDir();
-      territory.claimCountryAt(PLAYER, cellOf());
-      deathFlashLevel = 1;
-      hasCaptured = false;
-      hud.show('Tu as coupé ta propre traînée');
-      refreshScore();
+    game.update(dt);
+    for (const v of views) {
+      const trailing = v.player.alive && territory.trailLength(v.player.id) > 0;
+      if (trailing) v.footprints.record(v.player.pawn);
+      else if (v.footprints.hasPrints) v.footprints.clear();
     }
-    if (territory.trailLength > 0) footprints.record(pawn);
-    refreshHud();
+    handleEvents();
+    refreshCountry();
+    if (Math.ceil(game.timeLeft) !== shownSecond) refreshScore();
   }
 
   function render(alpha: number): void {
@@ -193,9 +263,14 @@ async function start(): Promise<void> {
       camera.fov = config.fovDeg;
       camera.updateProjectionMatrix();
     }
+    // Partie finie ou pion mort : plus d'interpolation, le pion est figé.
+    const a = game.over ? 1 : alpha;
     if (app.globeView) orbit.apply(alpha);
-    else follow.apply(pawn, alpha);
-    pawnView.update(pawn, app.globeView ? 1 : alpha);
+    else follow.apply(human.pawn, human.alive ? a : 1);
+    for (const v of views) {
+      v.pawnView.group.visible = v.player.alive;
+      if (v.player.alive) v.pawnView.update(v.player.pawn, app.globeView ? 1 : a);
+    }
     territoryView.update(stats.frameTime);
     if (deathFlashLevel > 0) {
       deathFlashLevel = Math.max(0, deathFlashLevel - stats.frameTime / config.deathFlashTime);
@@ -203,6 +278,7 @@ async function start(): Promise<void> {
     }
     renderer.render(scene, camera);
     labels.update(camera, window.innerWidth, window.innerHeight);
+    minimap.update(stats.frameTime);
     onFrame?.();
   }
 

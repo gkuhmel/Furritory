@@ -116,7 +116,7 @@ export class DebugPanel {
       `${this.countryCount} pays · ${Math.round(this.triangles / 1000)}k tri · ${info.calls} appels\n` +
       `rendu ${this.renderer.domElement.width}×${this.renderer.domElement.height} · écran ×${window.devicePixelRatio}\n` +
       `pion lat ${lat.toFixed(1)}° lon ${lon.toFixed(1)}°\n` +
-      `zone ${this.territory.countOwned(1)} cases · traînée ${this.territory.trailLength}`;
+      `zone ${this.territory.countOwned(1)} cases · traînée ${this.territory.trailLength(1)}`;
     this.frames = 0;
     this.elapsed = 0;
     this.worstMs = 0;

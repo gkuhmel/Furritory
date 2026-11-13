@@ -223,7 +223,7 @@ export class FootprintsView {
   private readonly scale = new THREE.Vector3();
   private readonly matrix = new THREE.Matrix4();
 
-  constructor() {
+  constructor(color: number) {
     // Quad dans le plan XZ local : X = côté, Z = avant, Y = ciel.
     const geo = new THREE.PlaneGeometry(1, 1);
     geo.rotateX(-Math.PI / 2);
@@ -231,13 +231,18 @@ export class FootprintsView {
     geo.rotateY(Math.PI);
     const mat = new THREE.MeshBasicMaterial({
       map: pawTexture(),
-      color: config.footprintColor,
+      color,
       transparent: true,
       depthWrite: false,
     });
     this.mesh = new THREE.InstancedMesh(geo, mat, config.footprintMax);
     this.mesh.count = 0;
     this.mesh.frustumCulled = false;
+  }
+
+  /** Vrai si au moins une empreinte est affichée. */
+  get hasPrints(): boolean {
+    return this.count > 0;
   }
 
   clear(): void {
