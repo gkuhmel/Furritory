@@ -12,12 +12,12 @@ type NumericKey = {
 /** Curseurs de réglage : [clé de config, libellé, min, max, pas]. */
 const SLIDERS: [NumericKey, string, number, number, number][] = [
   ['pawnSpeed', 'Vitesse pion (°/s)', 4, 30, 0.5],
-  ['turnRate', 'Virage (°/s)', 60, 720, 10],
+  ['turnRate', 'Virage (°/s)', 60, 1800, 20],
   ['viewSpanDeg', 'Zone visible (°)', 10, 60, 1],
   ['cameraTiltDeg', 'Inclinaison (°)', 0, 70, 1],
   ['fovDeg', 'Focale (°)', 25, 80, 1],
   ['pawnSizeDeg', 'Taille pion (°)', 0.5, 4, 0.1],
-  ['stickRadiusPx', 'Rayon joystick (px)', 8, 80, 1],
+  ['stickRadiusPx', 'Rayon joystick (px)', 4, 80, 1],
 ];
 
 /** Panneau de debug (?debug=1) : chargé à la demande, absent du jeu normal. */

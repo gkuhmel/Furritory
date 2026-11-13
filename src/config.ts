@@ -49,10 +49,10 @@ export const config = {
   idleSpinDeg: 4,
 
   // --- Pion ---
-  /** Vitesse de déplacement (°/s) : 12 = tour du monde en 30 s. */
-  pawnSpeed: 12,
-  /** Vitesse de virage (°/s). */
-  turnRate: 240,
+  /** Vitesse de déplacement (°/s) : 8 = tour du monde en 45 s. */
+  pawnSpeed: 8,
+  /** Vitesse de virage (°/s) : 900 = angle droit en 0,1 s, un virage net sans être une téléportation. */
+  turnRate: 900,
   /** Taille du pion (degrés d'arc). */
   pawnSizeDeg: 1.6,
   pawnColor: 0xd9482b,
@@ -64,7 +64,7 @@ export const config = {
   /** Déplacement minimal du doigt avant de donner un cap (px CSS). */
   stickDeadzonePx: 6,
   /** Au-delà de ce rayon, l'ancre du joystick suit le doigt : un demi-tour reste rapide (px CSS). */
-  stickRadiusPx: 28,
+  stickRadiusPx: 14,
 
   // --- Trace provisoire (remplacée par les empreintes à l'étape 3) ---
   traceSpacingDeg: 0.6,
