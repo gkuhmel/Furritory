@@ -23,6 +23,8 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     target: 'es2020',
+    // Three.js pèse à lui seul plus de 500 ko : on relève le seuil d'alerte pour un log de build propre.
+    chunkSizeWarningLimit: 900,
   },
   server: {
     host: true,
