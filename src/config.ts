@@ -73,6 +73,8 @@ export const config = {
   trailGraceCells: 4,
   /** Durée de l'éclat de capture (s). */
   capturePulseTime: 0.45,
+  /** Durée d'affichage d'un message en bas de l'écran (s). */
+  hudMessageTime: 2.2,
   /** Durée du fondu rouge à la mort (s). */
   deathFlashTime: 0.6,
 

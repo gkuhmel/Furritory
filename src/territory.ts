@@ -25,6 +25,8 @@ export class Territory {
   /** Cases de la traînée du joueur, dans l'ordre de passage. */
   private readonly trailCells: number[] = [];
   private lastCell = -1;
+  /** Cases de terre gagnées lors de la dernière capture. */
+  lastGain = 0;
 
   private readonly label: Int32Array;
   private readonly queue: Int32Array;
@@ -52,6 +54,7 @@ export class Territory {
   }
 
   private setOwner(cell: number, player: number): void {
+    if (this.owner[cell] !== player) this.lastGain++;
     this.owner[cell] = player;
     this.dirtyFaces[Math.floor(cell / (this.n * this.n))] = true;
   }
@@ -122,6 +125,7 @@ export class Territory {
    */
   private capture(player: number): void {
     const { near, owner, trail, label, queue } = this;
+    this.lastGain = 0;
     label.fill(0);
     const sizes: number[] = [0];
 

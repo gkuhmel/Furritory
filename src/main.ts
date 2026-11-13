@@ -4,6 +4,7 @@ import { OrbitCamera } from './camera';
 import { config } from './config';
 import { dirToCell } from './cube-grid';
 import { FollowCamera } from './follow-camera';
+import { Hud } from './hud';
 import { Input } from './input';
 import { startLoop, type LoopStats } from './loop';
 import { Pawn } from './pawn';
@@ -51,6 +52,11 @@ async function start(): Promise<void> {
     'position:fixed;inset:0;background:#b3261e;opacity:0;pointer-events:none;z-index:5';
   document.body.appendChild(deathFlash);
   let deathFlashLevel = 0;
+  const hud = new Hud();
+  /** Vrai tant que la consigne « reviens dans ta zone » est affichée. */
+  let trailHint = false;
+  /** La consigne n'est plus rappelée une fois que le joueur a réussi une capture. */
+  let hasCaptured = false;
 
   /** État de l'application. `globeView` : rotation libre du globe (menus, debug), jeu en pause. */
   const app = { globeView: false };
@@ -108,17 +114,27 @@ async function start(): Promise<void> {
     pawn.update(dt);
 
     const event = territory.step(PLAYER, cellOf());
-    if (event === 'capture') {
+    if (event === 'trail' && !trailHint && !hasCaptured) {
+      // La règle de base : c'est le retour chez soi qui ferme la boucle.
+      trailHint = true;
+      hud.show('Reviens dans ta zone pour fermer la boucle', true);
+    } else if (event === 'capture') {
+      trailHint = false;
       footprints.clear();
       territoryView.flash();
+      if (territory.lastGain > 0) hasCaptured = true;
+      hud.show(territory.lastGain > 0 ? 'Zone capturée !' : 'Boucle fermée');
     } else if (event === 'death') {
       // Mort : on perd tout et on repart du pays de départ.
+      trailHint = false;
       territory.wipe(PLAYER);
       footprints.clear();
       pawn.reset(config.startLon, config.startLat);
       input.resetDir();
       territory.claimCountryAt(PLAYER, cellOf());
       deathFlashLevel = 1;
+      hasCaptured = false;
+      hud.show('Tu as coupé ta propre traînée');
     }
     if (territory.trailLength > 0) footprints.record(pawn);
   }
