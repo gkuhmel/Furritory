@@ -65,7 +65,7 @@ export interface Globe {
  * Construit le globe-plateau : mer lisse, terres en léger relief découpées pays par pays,
  * tranche visible le long des côtes, frontières gravées.
  */
-export function buildGlobe(world: World): Globe {
+export function buildGlobe(world: World, landMaterial: THREE.Material): Globe {
   const group = new THREE.Group();
   const rTop = 1 + config.landHeight;
 
@@ -169,7 +169,7 @@ export function buildGlobe(world: World): Globe {
   }
   landGeo.setAttribute('normal', new THREE.BufferAttribute(landNormals, 3));
   landGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(colors), 3));
-  const land = new THREE.Mesh(landGeo, new THREE.MeshLambertMaterial({ vertexColors: true }));
+  const land = new THREE.Mesh(landGeo, landMaterial);
   group.add(land);
 
   // --- Tranche des terres le long des côtes ---

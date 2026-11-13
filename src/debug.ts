@@ -2,6 +2,7 @@ import type * as THREE from 'three';
 import { config } from './config';
 import type { LoopStats } from './loop';
 import type { Pawn } from './pawn';
+import type { Territory } from './territory';
 
 const RAD = 180 / Math.PI;
 
@@ -11,12 +12,12 @@ type NumericKey = {
 
 /** Curseurs de réglage : [clé de config, libellé, min, max, pas]. */
 const SLIDERS: [NumericKey, string, number, number, number][] = [
-  ['pawnSpeed', 'Vitesse pion (°/s)', 4, 30, 0.5],
+  ['pawnSpeed', 'Vitesse pion (°/s)', 1, 20, 0.25],
   ['turnRate', 'Virage (°/s)', 60, 1800, 20],
-  ['viewSpanDeg', 'Zone visible (°)', 10, 60, 1],
+  ['viewSpanDeg', 'Zone visible (°)', 6, 60, 1],
   ['cameraTiltDeg', 'Inclinaison (°)', 0, 70, 1],
   ['fovDeg', 'Focale (°)', 25, 80, 1],
-  ['pawnSizeDeg', 'Taille pion (°)', 0.5, 4, 0.1],
+  ['pawnSizeDeg', 'Taille pion (°)', 0.3, 3, 0.1],
   ['stickRadiusPx', 'Rayon joystick (px)', 4, 80, 1],
 ];
 
@@ -33,6 +34,7 @@ export class DebugPanel {
     private readonly renderer: THREE.WebGLRenderer,
     app: { globeView: boolean },
     private readonly pawn: Pawn,
+    private readonly territory: Territory,
     private readonly countryCount: number,
     private readonly triangles: number,
   ) {
@@ -112,7 +114,8 @@ export class DebugPanel {
       `${this.fps.toFixed(0)} fps · pire image ${this.worstMs.toFixed(0)} ms\n` +
       `simu ${this.stats.updateMs.toFixed(2)} ms · rendu ${this.stats.renderMs.toFixed(2)} ms\n` +
       `${this.countryCount} pays · ${Math.round(this.triangles / 1000)}k tri · ${info.calls} appels\n` +
-      `pion lat ${lat.toFixed(1)}° lon ${lon.toFixed(1)}°`;
+      `pion lat ${lat.toFixed(1)}° lon ${lon.toFixed(1)}°\n` +
+      `zone ${this.territory.countOwned(1)} cases · traînée ${this.territory.trailLength}`;
     this.frames = 0;
     this.elapsed = 0;
     this.worstMs = 0;

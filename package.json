@@ -8,7 +8,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "deploy": "npm run build && wrangler deploy",
-    "preview:worker": "npm run build && wrangler dev"
+    "preview:worker": "npm run build && wrangler dev",
+    "build:grid": "node scripts/build-grid.ts"
   },
   "dependencies": {
     "three": "^0.187.0",

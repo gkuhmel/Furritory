@@ -76,6 +76,13 @@ export class Input {
     document.addEventListener('touchmove', block, { passive: false });
   }
 
+  /** Oublie le cap en cours (réapparition du pion). */
+  resetDir(): void {
+    this.hasDir = false;
+    this.anchorX = this.lastX;
+    this.anchorY = this.lastY;
+  }
+
   /** Renvoie le déplacement accumulé depuis le dernier appel, puis le remet à zéro. */
   consumeDrag(out: { x: number; y: number }): void {
     out.x = this.dx;

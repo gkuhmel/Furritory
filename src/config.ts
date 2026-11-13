@@ -36,9 +36,9 @@ export const config = {
    * Vue jeu : arc de globe visible (degrés) sur la plus petite dimension de l'écran.
    * Fixe l'échelle ressentie du monde, identique sur téléphone et tablette.
    */
-  viewSpanDeg: 28,
+  viewSpanDeg: 12,
   /** Vue jeu : inclinaison de la caméra par rapport à la verticale du pion (degrés). */
-  cameraTiltDeg: 35,
+  cameraTiltDeg: 30,
 
   // --- Rotation libre du globe (menus uniquement) ---
   /** Décroissance de l'inertie après le lâcher (1/s). */
@@ -49,12 +49,12 @@ export const config = {
   idleSpinDeg: 4,
 
   // --- Pion ---
-  /** Vitesse de déplacement (°/s) : 8 = tour du monde en 45 s. */
-  pawnSpeed: 8,
+  /** Vitesse de déplacement (°/s) : 4 = traversée de la France en 2 s, tour du monde en 90 s. */
+  pawnSpeed: 4,
   /** Vitesse de virage (°/s) : 900 = angle droit en 0,1 s, un virage net sans être une téléportation. */
   turnRate: 900,
   /** Taille du pion (degrés d'arc). */
-  pawnSizeDeg: 1.6,
+  pawnSizeDeg: 0.9,
   pawnColor: 0xd9482b,
   /** Départ : longitude, latitude (France). */
   startLon: 2.5,
@@ -66,8 +66,21 @@ export const config = {
   /** Au-delà de ce rayon, l'ancre du joystick suit le doigt : un demi-tour reste rapide (px CSS). */
   stickRadiusPx: 14,
 
-  // --- Trace provisoire (remplacée par les empreintes à l'étape 3) ---
-  traceSpacingDeg: 0.6,
-  traceLength: 500,
-  traceColor: 0xd9482b,
+  // --- Territoire ---
+  /** Couleur de zone par joueur (joueur 1 en premier). */
+  playerColors: [0xe2572f, 0x3f7fd1, 0x49a35a, 0x9a59c4, 0xe0a81f, 0x2fb5b0],
+  /** Nombre de dernières cases de traînée qu'on peut retoucher sans mourir. */
+  trailGraceCells: 4,
+  /** Durée de l'éclat de capture (s). */
+  capturePulseTime: 0.45,
+  /** Durée du fondu rouge à la mort (s). */
+  deathFlashTime: 0.6,
+
+  // --- Empreintes de la traînée ---
+  footprintSpacingDeg: 0.35,
+  footprintSizeDeg: 0.4,
+  /** Écart latéral gauche/droite des pattes (degrés). */
+  footprintOffsetDeg: 0.13,
+  footprintColor: 0x7a2412,
+  footprintMax: 4000,
 };

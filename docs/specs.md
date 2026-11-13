@@ -57,7 +57,7 @@ Ce qui distingue le jeu du genre « boucle de territoire » :
 
 ### Monde et unités
 - Le globe a un rayon de 1. Les positions sont des vecteurs unitaires, les distances des angles (degrés), les vitesses des degrés par seconde.
-- **Grille de territoire** : sphère découpée en cube projeté (6 faces × N × N cases, N ≈ 180, soit des cases d'environ 0,5°). Pas de déformation aux pôles, voisinage simple pour le remplissage.
+- **Grille de territoire** : sphère découpée en cube projeté (6 faces × N × N cases, N = 256, soit des cases d'environ 0,35°). Pas de déformation aux pôles, voisinage simple pour le remplissage.
 - Chaque case porte : terre ou mer, identifiant du pays, propriétaire, traînée éventuelle.
 - La table « case → pays » est **précalculée au build** à partir de Natural Earth (domaine public) et livrée comme fichier binaire.
 - Les très petits pays sont grossis à un minimum de cases (`minCountryCells`) ou fusionnés avec un voisin, pour rester jouables au doigt.
@@ -93,10 +93,10 @@ src/
 ### Valeurs de départ
 | Paramètre | Valeur | Rôle |
 |---|---|---|
-| `pawnSpeed` | 8 °/s | Tour du monde en 45 s |
+| `pawnSpeed` | 4 °/s | Traversée de la France en 2 s, tour du monde en 90 s |
 | `turnRate` | 900 °/s | Virage net : angle droit en 0,1 s |
-| `viewSpanDeg` | 28° | Arc de globe visible sur la plus petite dimension de l'écran |
-| `cameraTiltDeg` | 35° | Inclinaison de la vue |
+| `viewSpanDeg` | 12° | Arc de globe visible sur la plus petite dimension de l'écran |
+| `cameraTiltDeg` | 30° | Inclinaison de la vue |
 | `stickRadiusPx` | 14 px | Rayon du joystick invisible : au-delà, l'ancre suit le doigt |
 
 Ces valeurs fixent l'échelle ressentie du monde : ce sont les premières à régler.

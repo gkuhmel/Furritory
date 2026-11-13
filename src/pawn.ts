@@ -29,12 +29,18 @@ export class Pawn {
   private readonly cross = new THREE.Vector3();
 
   constructor(lonDeg: number, latDeg: number) {
+    this.reset(lonDeg, latDeg);
+  }
+
+  /** Replace le pion à un point de départ, cap et haut de l'écran vers le nord. */
+  reset(lonDeg: number, latDeg: number): void {
     const phi = latDeg * DEG;
     const lambda = lonDeg * DEG;
     this.pos.set(Math.cos(phi) * Math.sin(lambda), Math.sin(phi), Math.cos(phi) * Math.cos(lambda));
-    // Au départ, le haut de l'écran pointe vers le nord.
     this.up.set(0, 1, 0).addScaledVector(this.pos, -this.pos.y).normalize();
     this.heading.copy(this.up);
+    this.wantX = 0;
+    this.wantY = -1;
     this.savePrev();
   }
 
