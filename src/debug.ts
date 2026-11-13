@@ -42,7 +42,7 @@ export class DebugPanel {
 
     const root = document.createElement('div');
     root.style.cssText =
-      'position:fixed;left:8px;top:calc(8px + env(safe-area-inset-top,0px));z-index:10;' +
+      'position:fixed;left:8px;top:calc(70px + env(safe-area-inset-top,0px));z-index:10;' +
       'font:11px/1.4 ui-monospace,Menlo,monospace;color:#fff;background:rgba(0,0,0,.6);' +
       'padding:8px 10px;border-radius:8px;max-width:calc(100vw - 16px);box-sizing:border-box';
     this.text = document.createElement('div');

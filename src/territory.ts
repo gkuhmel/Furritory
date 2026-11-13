@@ -27,6 +27,18 @@ export class Territory {
   private lastCell = -1;
   /** Cases de terre gagnées lors de la dernière capture. */
   lastGain = 0;
+  /** Pays qui ont basculé lors de la dernière capture. */
+  readonly lastFlips: number[] = [];
+
+  /** Nombre de pays (indices 0..countryCount-1). */
+  readonly countryCount: number;
+  /** Nombre de cases de chaque pays. */
+  readonly countrySize: Int32Array;
+  /** Cases possédées par joueur et par pays : indice joueur · 256 + pays. */
+  private readonly owned: Int32Array;
+  /** Cases regroupées par pays : celles du pays p vont de countryStart[p] à countryStart[p + 1]. */
+  private readonly countryCells: Int32Array;
+  private readonly countryStart: Int32Array;
 
   private readonly label: Int32Array;
   private readonly queue: Int32Array;
@@ -43,6 +55,32 @@ export class Territory {
     this.trail = new Uint8Array(this.cells);
     this.label = new Int32Array(this.cells);
     this.queue = new Int32Array(this.cells);
+    let maxCountry = -1;
+    for (let c = 0; c < this.cells; c++) {
+      const p = this.country[c] ?? SEA;
+      if (p !== SEA && p > maxCountry) maxCountry = p;
+    }
+    this.countryCount = maxCountry + 1;
+    this.countrySize = new Int32Array(this.countryCount);
+    for (let c = 0; c < this.cells; c++) {
+      const p = this.country[c] ?? SEA;
+      if (p !== SEA) this.countrySize[p] = (this.countrySize[p] ?? 0) + 1;
+    }
+    this.countryStart = new Int32Array(this.countryCount + 1);
+    for (let p = 0; p < this.countryCount; p++) {
+      this.countryStart[p + 1] = (this.countryStart[p] ?? 0) + (this.countrySize[p] ?? 0);
+    }
+    this.countryCells = new Int32Array(this.countryStart[this.countryCount] ?? 0);
+    const fill = this.countryStart.slice(0, this.countryCount);
+    for (let c = 0; c < this.cells; c++) {
+      const p = this.country[c] ?? SEA;
+      if (p === SEA) continue;
+      const at = fill[p] ?? 0;
+      this.countryCells[at] = c;
+      fill[p] = at + 1;
+    }
+    this.owned = new Int32Array((config.playerColors.length + 1) * 256);
+
     this.near = new Int32Array(this.cells * 4);
     for (let c = 0; c < this.cells; c++) {
       for (let k = 0; k < 4; k++) this.near[c * 4 + k] = neighbor(this.n, c, k);
@@ -54,30 +92,60 @@ export class Territory {
   }
 
   private setOwner(cell: number, player: number): void {
-    if (this.owner[cell] !== player) this.lastGain++;
+    const before = this.owner[cell] ?? 0;
+    if (before === player) return;
+    const p = this.country[cell] ?? SEA;
+    this.owned[before * 256 + p] = (this.owned[before * 256 + p] ?? 0) - 1;
+    this.owned[player * 256 + p] = (this.owned[player * 256 + p] ?? 0) + 1;
+    this.lastGain++;
     this.owner[cell] = player;
     this.dirty = true;
   }
 
-  /** Donne au joueur tout le morceau de pays d'un seul tenant qui contient `cell`. */
+  /** Part du pays possédée par le joueur, entre 0 et 1. */
+  share(player: number, country: number): number {
+    const size = this.countrySize[country] ?? 0;
+    return size > 0 ? (this.owned[player * 256 + country] ?? 0) / size : 0;
+  }
+
+  /** Nombre de pays possédés en entier par le joueur : c'est le score. */
+  countriesOwned(player: number): number {
+    let count = 0;
+    for (let p = 0; p < this.countryCount; p++) {
+      const size = this.countrySize[p] ?? 0;
+      if (size > 0 && this.owned[player * 256 + p] === size) count++;
+    }
+    return count;
+  }
+
+  /** Donne au joueur toutes les cases d'un pays. */
+  claimCountry(player: number, country: number): void {
+    const end = this.countryStart[country + 1] ?? 0;
+    for (let i = this.countryStart[country] ?? 0; i < end; i++) {
+      this.setOwner(this.countryCells[i] ?? 0, player);
+    }
+  }
+
+  /**
+   * Bascule : tout pays dont le joueur possède au moins `flipThreshold` passe entièrement à lui.
+   * Renvoie les pays basculés dans `lastFlips`.
+   */
+  private flipCountries(player: number): void {
+    this.lastFlips.length = 0;
+    for (let p = 0; p < this.countryCount; p++) {
+      const size = this.countrySize[p] ?? 0;
+      const mine = this.owned[player * 256 + p] ?? 0;
+      if (mine === size || mine < size * config.flipThreshold) continue;
+      this.claimCountry(player, p);
+      this.lastFlips.push(p);
+    }
+  }
+
+  /** Donne au joueur le pays entier qui contient `cell` (pays de départ). */
   claimCountryAt(player: number, cell: number): void {
     const country = this.country[cell];
     if (country === undefined || country === SEA) return;
-    const queue = this.queue;
-    let head = 0;
-    let tail = 0;
-    queue[tail++] = cell;
-    this.setOwner(cell, player);
-    while (head < tail) {
-      const c = queue[head++] ?? 0;
-      for (let k = 0; k < 4; k++) {
-        const o = this.near[c * 4 + k] ?? 0;
-        if (this.country[o] === country && this.owner[o] !== player) {
-          this.setOwner(o, player);
-          queue[tail++] = o;
-        }
-      }
-    }
+    this.claimCountry(player, country);
     this.lastCell = cell;
   }
 
@@ -168,6 +236,7 @@ export class Territory {
       if (owner[t] !== SEA) this.setOwner(t, player);
     }
     this.clearTrail();
+    this.flipCountries(player);
   }
 
   /** Nombre de cases de terre possédées par le joueur (debug). */

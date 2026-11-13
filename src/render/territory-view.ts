@@ -17,6 +17,9 @@ varying vec3 vGridDir;
 const FRAGMENT_DECL = /* glsl */ `
 varying vec3 vGridDir;
 uniform sampler2D uGrid;
+uniform sampler2D uCountryGrid;
+uniform vec4 uFlipIds;
+uniform float uFlip;
 uniform float uGridN;
 uniform vec3 uPlayerColors[7];
 uniform float uPulse;
@@ -29,6 +32,14 @@ float gridOwner(float face, vec2 texel) {
   return floor(texture2D(uGrid, vec2(t.x / uGridN, (face * uGridN + t.y) / (6.0 * uGridN))).r * 255.0 + 0.5);
 }
 
+// Pays de la case qui contient ce pixel (255 = mer).
+float gridCountry(float face, vec2 texel) {
+  vec2 t = clamp(texel, vec2(0.0), vec2(uGridN - 1.0)) + 0.5;
+  return floor(texture2D(uCountryGrid, vec2(t.x / uGridN, (face * uGridN + t.y) / (6.0 * uGridN))).r * 255.0 + 0.5);
+}
+
+float zoneCountry;
+
 // Renvoie (propriétaire, poids du vote).
 vec2 zoneAt(vec3 d) {
   vec3 a = abs(d);
@@ -39,6 +50,7 @@ vec2 zoneAt(vec3 d) {
   else { face = d.z > 0.0 ? 4.0 : 5.0; uv = d.xy / a.z; }
   vec2 p = (vec2(gridWarp(uv.x), gridWarp(uv.y)) * 0.5 + 0.5) * uGridN - 0.5;
   vec2 base = floor(p);
+  zoneCountry = uFlip > 0.0 ? gridCountry(face, floor(p + 0.5)) : -1.0;
   vec2 f = p - base;
   vec4 ids = vec4(
     gridOwner(face, base),
@@ -73,7 +85,9 @@ const FRAGMENT_COLOR = /* glsl */ `
     // Liseré plus sombre au bord de la zone, éclat bref à la capture.
     float edge = 1.0 - smoothstep(0.5, 0.62, zone.y);
     paint *= 1.0 - 0.3 * edge;
-    paint += vec3(uPulse * 0.45);
+    paint += vec3(uPulse * 0.25);
+    // Pays qui vient de basculer : éclat blanc qui s'estompe.
+    if (uFlip > 0.0 && any(equal(vec4(zoneCountry), uFlipIds))) paint = mix(paint, vec3(1.0), uFlip * 0.85);
     diffuseColor.rgb = mix(diffuseColor.rgb, paint, 0.88);
   }
 }
@@ -84,6 +98,9 @@ export class TerritoryView {
   readonly landMaterial: THREE.MeshLambertMaterial;
   private readonly texture: THREE.DataTexture;
   private readonly pulse = { value: 0 };
+  private readonly flip = { value: 0 };
+  private readonly flipIds = { value: new THREE.Vector4(-1, -1, -1, -1) };
+  private readonly countryTexture: THREE.DataTexture;
 
   constructor(private readonly territory: Territory) {
     const n = territory.n;
@@ -95,12 +112,23 @@ export class TerritoryView {
     this.texture.unpackAlignment = 1;
     this.texture.needsUpdate = true;
 
+    // Table « case → pays », fixe : sert à repérer dans le shader les pays qui basculent.
+    this.countryTexture = new THREE.DataTexture(territory.country, n, 6 * n, THREE.RedFormat, THREE.UnsignedByteType);
+    this.countryTexture.magFilter = THREE.NearestFilter;
+    this.countryTexture.minFilter = THREE.NearestFilter;
+    this.countryTexture.generateMipmaps = false;
+    this.countryTexture.unpackAlignment = 1;
+    this.countryTexture.needsUpdate = true;
+
     const colors = [new THREE.Color(0), ...config.playerColors.map((c) => new THREE.Color(c))];
     while (colors.length < 7) colors.push(new THREE.Color(0xffffff));
 
     this.landMaterial = new THREE.MeshLambertMaterial({ vertexColors: true });
     this.landMaterial.onBeforeCompile = (shader) => {
       shader.uniforms['uGrid'] = { value: this.texture };
+      shader.uniforms['uCountryGrid'] = { value: this.countryTexture };
+      shader.uniforms['uFlip'] = this.flip;
+      shader.uniforms['uFlipIds'] = this.flipIds;
       shader.uniforms['uGridN'] = { value: n };
       shader.uniforms['uPlayerColors'] = { value: colors };
       shader.uniforms['uPulse'] = this.pulse;
@@ -118,6 +146,13 @@ export class TerritoryView {
     this.pulse.value = 1;
   }
 
+  /** Fait briller les pays qui viennent de basculer (4 au plus à la fois). */
+  flashCountries(countries: readonly number[]): void {
+    if (countries.length === 0) return;
+    this.flipIds.value.set(countries[0] ?? -1, countries[1] ?? -1, countries[2] ?? -1, countries[3] ?? -1);
+    this.flip.value = 1;
+  }
+
   /** À appeler à chaque image : envoie au GPU les faces modifiées, fait décroître l'éclat. */
   update(frameTime: number): void {
     if (this.territory.dirty) {
@@ -125,6 +160,7 @@ export class TerritoryView {
       this.texture.needsUpdate = true;
     }
     this.pulse.value = Math.max(0, this.pulse.value - frameTime / config.capturePulseTime);
+    this.flip.value = Math.max(0, this.flip.value - frameTime / config.flipFlashTime);
   }
 }
 

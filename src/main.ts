@@ -2,6 +2,7 @@ import './style.css';
 import * as THREE from 'three';
 import { OrbitCamera } from './camera';
 import { config } from './config';
+import { countryNames } from './country-names';
 import { dirToCell } from './cube-grid';
 import { FollowCamera } from './follow-camera';
 import { Hud } from './hud';
@@ -11,7 +12,7 @@ import { Pawn } from './pawn';
 import { buildGlobe } from './render/globe';
 import { PawnView } from './render/pawn-view';
 import { FootprintsView, TerritoryView } from './render/territory-view';
-import { Territory } from './territory';
+import { SEA, Territory } from './territory';
 import { loadWorld } from './world';
 
 /** Numéro du joueur humain dans la grille de territoire. */
@@ -57,6 +58,32 @@ async function start(): Promise<void> {
   let trailHint = false;
   /** La consigne n'est plus rappelée une fois que le joueur a réussi une capture. */
   let hasCaptured = false;
+
+  // Pays sous le pion et score : rafraîchis seulement quand ils changent.
+  let hudCell = -1;
+  let shownScore = 0;
+  function refreshHud(force = false): void {
+    const cell = cellOf();
+    if (!force && cell === hudCell) return;
+    hudCell = cell;
+    const country = territory.country[cell] ?? SEA;
+    if (country === SEA) hud.setCountry('', 0);
+    else hud.setCountry(countryNames[country] ?? '', territory.share(PLAYER, country));
+  }
+  function refreshScore(): void {
+    shownScore = territory.countriesOwned(PLAYER);
+    hud.setScore(shownScore, territory.countryCount);
+    refreshHud(true);
+  }
+  refreshScore();
+
+  /** « A », « A et B », « A, B et C », ou un simple compte au-delà. */
+  function flipMessage(flips: readonly number[]): string {
+    const names = flips.map((c) => countryNames[c] ?? '?');
+    if (names.length === 1) return `${names[0]} bascule !`;
+    if (names.length > 3) return `${names.length} pays basculent !`;
+    return `${names.slice(0, -1).join(', ')} et ${names[names.length - 1]} basculent !`;
+  }
 
   /** État de l'application. `globeView` : rotation libre du globe (menus, debug), jeu en pause. */
   const app = { globeView: false };
@@ -115,6 +142,7 @@ async function start(): Promise<void> {
     if (input.hasDir) pawn.steer(input.dirX, input.dirY);
     pawn.update(dt);
 
+    const scoreBefore = shownScore;
     const event = territory.step(PLAYER, cellOf());
     if (event === 'trail' && !trailHint && !hasCaptured) {
       // La règle de base : c'est le retour chez soi qui ferme la boucle.
@@ -125,7 +153,17 @@ async function start(): Promise<void> {
       footprints.clear();
       territoryView.flash();
       if (territory.lastGain > 0) hasCaptured = true;
-      hud.show(territory.lastGain > 0 ? 'Zone capturée !' : 'Boucle fermée');
+      const gained = territory.countriesOwned(PLAYER) - scoreBefore;
+      const plus = gained > 0 ? ` +${gained} pays` : '';
+      if (territory.lastFlips.length > 0) {
+        territoryView.flashCountries(territory.lastFlips);
+        hud.show(flipMessage(territory.lastFlips) + plus);
+      } else if (gained > 0) {
+        hud.show(`Conquis !${plus}`);
+      } else {
+        hud.show(territory.lastGain > 0 ? 'Zone capturée !' : 'Boucle fermée');
+      }
+      refreshScore();
     } else if (event === 'death') {
       // Mort : on perd tout et on repart du pays de départ.
       trailHint = false;
@@ -137,8 +175,10 @@ async function start(): Promise<void> {
       deathFlashLevel = 1;
       hasCaptured = false;
       hud.show('Tu as coupé ta propre traînée');
+      refreshScore();
     }
     if (territory.trailLength > 0) footprints.record(pawn);
+    refreshHud();
   }
 
   function render(alpha: number): void {

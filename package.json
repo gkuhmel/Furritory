@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "deploy": "npm run build && wrangler deploy",
     "preview:worker": "npm run build && wrangler dev",
-    "build:grid": "node scripts/build-grid.ts"
+    "build:grid": "node scripts/build-grid.ts",
+    "build:names": "node scripts/build-names.ts"
   },
   "dependencies": {
     "three": "^0.187.0",
@@ -20,6 +21,7 @@
     "@types/three": "^0.187.0",
     "@types/topojson-client": "^3.1.5",
     "@types/topojson-specification": "^1.0.5",
+    "i18n-iso-countries": "^7.14.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.8",
     "wrangler": "^4.161.0"

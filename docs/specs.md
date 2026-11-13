@@ -118,6 +118,7 @@ Ces valeurs fixent l'échelle ressentie du monde : ce sont les premières à ré
 
 ## 6. Bascule des pays et capitales
 
+- Le HUD affiche le pays sous le pion avec une jauge de la part conquise et un repère à 50 % : la règle se lit sans tutoriel.
 - Après chaque capture, pour chaque pays touché : si un joueur possède au moins `flipThreshold` (50 %) des cases du pays, **toutes les cases du pays passent à lui**. Effet visuel et sonore marqué : c'est la récompense centrale du jeu.
 - Un pays compte au score seulement quand il est possédé en entier.
 - **Capitale** : chaque pays a sa capitale, marquée par un petit pion-ville. Si la traînée d'un joueur passe sur la capitale, le pays bascule chez lui à la fermeture de la boucle, quel que soit le pourcentage.

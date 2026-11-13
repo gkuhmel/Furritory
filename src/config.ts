@@ -74,6 +74,10 @@ export const config = {
   // --- Territoire ---
   /** Couleur de zone par joueur (joueur 1 en premier). */
   playerColors: [0xe2572f, 0x3f7fd1, 0x49a35a, 0x9a59c4, 0xe0a81f, 0x2fb5b0],
+  /** Part d'un pays à posséder pour qu'il bascule en entier. */
+  flipThreshold: 0.5,
+  /** Durée de l'éclat blanc d'un pays qui bascule (s). */
+  flipFlashTime: 1.1,
   /** Nombre de dernières cases de traînée qu'on peut retoucher sans mourir. */
   trailGraceCells: 4,
   /** Durée de l'éclat de capture (s). */
