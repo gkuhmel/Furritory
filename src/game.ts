@@ -163,8 +163,6 @@ export class Game {
 
       if (event === 'trail') {
         if (t.trailLength(p.id) === 1) this.events.push({ type: 'trail', player: p.id });
-      } else if (event === 'death') {
-        this.kill(p, p.id);
       } else if (event === 'capture') {
         this.events.push({
           type: 'capture',

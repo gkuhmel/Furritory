@@ -111,7 +111,7 @@ Ces valeurs fixent l'échelle ressentie du monde : ce sont les premières à ré
 - Les empreintes se remplissent alors avec le motif de pelage de l'animal (animation courte).
 - Les cases de mer enfermées ne sont pas capturées et ne comptent pas.
 - Du territoire rival enfermé est pris.
-- **Mort** : un pion meurt si un rival touche sa traînée, ou s'il touche la sienne.
+- **Mort** : un pion meurt si un rival touche sa traînée. Recouper sa propre traînée est sans danger ; seule la rentrée dans sa zone ferme la boucle.
 - À la mort : la traînée disparaît, **ses pays redeviennent neutres**, il réapparaît après `respawnDelay` dans un pays neutre avec ce pays entier.
 
 ---

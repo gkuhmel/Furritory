@@ -144,9 +144,7 @@ async function start(): Promise<void> {
         if (event.player === HUMAN) {
           deathFlashLevel = 1;
           hasCaptured = false;
-          hud.show(
-            event.by === HUMAN ? 'Tu as coupé ta propre traînée' : `${nameOf(event.by)} a coupé ta traînée !`,
-          );
+          hud.show(`${nameOf(event.by)} a coupé ta traînée !`);
         } else if (event.by === HUMAN) {
           hud.show(`Tu as éliminé ${nameOf(event.player)} !`);
         }

@@ -83,8 +83,6 @@ export const config = {
   flipThreshold: 0.5,
   /** Durée de l'éclat blanc d'un pays qui bascule (s). */
   flipFlashTime: 1.1,
-  /** Nombre de dernières cases de traînée qu'on peut retoucher sans mourir. */
-  trailGraceCells: 4,
   /** Durée de l'éclat de capture (s). */
   capturePulseTime: 0.45,
   /** Durée d'affichage d'un message en bas de l'écran (s). */

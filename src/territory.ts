@@ -7,7 +7,7 @@ export const SEA = 255;
 /** Valeur « pays partagé » dans `countryState`. */
 export const MIXED = 254;
 
-export type StepEvent = 'none' | 'trail' | 'capture' | 'death';
+export type StepEvent = 'none' | 'trail' | 'capture';
 
 /**
  * État du territoire sur la grille : à qui appartient chaque case, et les traînées en cours.
@@ -312,12 +312,8 @@ export class Territory {
       return 'capture';
     }
 
-    if (this.trail[cell] === player) {
-      // Les toutes dernières cases sont tolérées : on ne meurt pas d'un simple tremblement.
-      const index = trail.lastIndexOf(cell);
-      if (trail.length - 1 - index > config.trailGraceCells) return 'death';
-      return 'none';
-    }
+    // Recouper sa propre traînée est sans danger : seul un rival peut la couper.
+    if (this.trail[cell] === player) return 'none';
 
     this.trail[cell] = player;
     trail.push(cell);
