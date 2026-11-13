@@ -42,6 +42,14 @@ export class Hud {
     this.score.style.cssText = chip + ';white-space:nowrap';
     top.append(country, this.score);
     document.body.appendChild(top);
+
+    // Version du build, discrète, en bas à droite : permet de vérifier ce qui est déployé.
+    const version = document.createElement('div');
+    version.textContent = __BUILD_ID__;
+    version.style.cssText =
+      'position:fixed;right:8px;bottom:calc(4px + env(safe-area-inset-bottom,0px));z-index:6;' +
+      'pointer-events:none;color:rgba(255,255,255,.55);font:10px/1 ui-monospace,Menlo,monospace';
+    document.body.appendChild(version);
   }
 
   /** Affiche un message ; `sticky` le garde jusqu'au prochain `hide` ou `show`. */
