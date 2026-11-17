@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Panda Roux Volant</title>
+<link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="menu" class="screen">
+  <div class="card">
+    <h1>Panda Roux<small>Volant</small></h1>
+    <div class="stats"><span>🏆 <b id="mBest">0</b></span><span>🥟 <b id="mBao">0</b></span><span>✨ bao ×<b id="mMult">1</b></span></div>
+    <div class="missions" id="mMissions"></div>
+    <button class="big" id="bPlay">Jouer</button>
+    <div class="row"><button id="bShop">👘 Boutique</button><button id="bSound" style="flex:0 0 64px">🔊</button></div>
+    <p class="legend">🥟 bao · 🏮 bouclier · ☁️ nuage-éclair · 🍑 ralenti + aimant<br>12 bao = 🐉 dragon · frôle les bambous pour enchaîner les combos</p>
+  </div>
+</div>
+
+<div id="over" class="screen hidden">
+  <div class="card">
+    <h2 id="oTitle">Aïe, le bambou !</h2>
+    <div class="score" id="oScore">0</div>
+    <div id="oBest" style="font-size:16px;opacity:.9"></div>
+    <div id="oNew" class="new hidden">NOUVEAU RECORD !</div>
+    <div class="stats"><span id="oBao"></span><span>💰 <b id="oWallet"></b></span></div>
+    <div class="missions" id="oMissions"></div>
+    <button class="big" id="bAgain">Rejouer</button>
+    <div class="row"><button id="bShop2">👘 Boutique</button><button id="bMenu">Menu</button></div>
+  </div>
+</div>
+
+<div id="shop" class="screen hidden">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">Boutique</h2><div style="font-size:18px;font-weight:800">🥟 <span id="sBao">0</span></div></div>
+    <canvas id="pv" style="margin-top:10px"></canvas>
+    <div class="tabs" id="tabs"></div>
+    <div class="grid" id="grid"></div>
+    <div class="row"><button id="bBuy" class="hidden" style="background:linear-gradient(#ffcf4a,#ff8a3c);color:#fff;text-shadow:0 2px 0 #a33a1a;box-shadow:0 4px 0 #a33a1a"></button></div>
+    <div class="row"><button id="bBack">Retour</button></div>
+  </div>
+</div>
+
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>
