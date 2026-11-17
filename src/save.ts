@@ -15,6 +15,7 @@ export interface SaveData {
   missions: Mission[] | null;
   ghost: number[] | null;
   sound: boolean;
+  levels: number[]; // étoiles obtenues par niveau de l'aventure (0 = pas réussi)
 }
 
 const DEF: SaveData = {
@@ -27,6 +28,7 @@ const DEF: SaveData = {
   missions: null,
   ghost: null,
   sound: true,
+  levels: [],
 };
 
 const fresh = (): SaveData => JSON.parse(JSON.stringify(DEF));
@@ -36,7 +38,9 @@ const fresh = (): SaveData => JSON.parse(JSON.stringify(DEF));
 function migrate(raw: Record<string, unknown>): Record<string, unknown> {
   const v = typeof raw.v === 'number' ? raw.v : 0;
   if (v < 1) raw.v = 1;
-  // Ajouter ici les migrations futures : if (v < 2) { … raw.v = 2 }
+  // v2 : aventure (étoiles par niveau)
+  if (v < 2) { raw.levels = []; raw.v = 2; }
+  // Ajouter ici les migrations futures : if (v < 3) { … raw.v = 3 }
   return raw;
 }
 
@@ -51,6 +55,7 @@ function load(): SaveData {
   const s: SaveData = Object.assign(fresh(), migrate(raw));
   s.eq = Object.assign({}, DEF.eq, s.eq || {});
   if (!Array.isArray(s.owned)) s.owned = fresh().owned;
+  if (!Array.isArray(s.levels)) s.levels = [];
   s.v = SAVE_VERSION;
   return s;
 }

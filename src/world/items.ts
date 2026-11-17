@@ -3,13 +3,13 @@ import * as C from '../config';
 import { G } from '../state';
 import { rnd } from '../util';
 import { sfx } from '../audio/sfx';
-import { burst, pop } from './fx';
+import { banner, burst, pop } from './fx';
 import { startDragon } from './dragon';
 
 // Bonus d'une tranche : bao dans le trou (x = baoX), puis un bonus entre deux paires (x = ix).
-export function spawnSlotItems(baoX: number, ix: number, cy: number, extra: boolean): void {
+export function spawnSlotItems(baoX: number, ix: number, cy: number, extra: boolean, noBao = false): void {
   const fest = G.evt && G.evt.k === 'festival';
-  if (Math.random() < (fest ? 1 : C.BAO_CHANCE)) G.items.push({ type: 'bao', x: baoX, y: cy, r: 13, ph: rnd(0, 6) });
+  if (!noBao && Math.random() < (fest ? 1 : C.BAO_CHANCE)) G.items.push({ type: 'bao', x: baoX, y: cy, r: 13, ph: rnd(0, 6) });
   if (extra) return;
   const q = Math.random(); const y = rnd(140, C.GROUND - 140);
   if (fest) {
@@ -38,6 +38,11 @@ export function updateItems(move: number, tdt: number, dt: number): void {
       }
       if (it.type === 'lantern') { G.shield = true; sfx.power(); burst(it.x, it.y, '#ff4a4a', 18); pop(it.x, it.y - 24, 'Bouclier lanterne', '#ffcf4a', 20); }
       if (it.type === 'cloud') { G.dashT = C.DASH_TIME; sfx.power(); burst(it.x, it.y, '#ffffff', 18); pop(it.x, it.y - 24, 'Nuage-éclair !', '#ffffff', 22); }
+      if (it.type === 'letter') {
+        const i = it.idx ?? 0; G.letters[i] = true; G.score += C.LETTER_POINTS; sfx.power();
+        burst(it.x, it.y, '#ffcf4a', 20); pop(it.x, it.y - 26, `Lettre ${C.LETTERS[i]} !`, '#ffcf4a', 22);
+        if (G.letters.every(Boolean)) { banner('🍫 CHOCO ! Bao ×' + C.CHOCO_BAO_MULT, '#ffcf4a', 32); G.flash = 0.4; }
+      }
       if (it.type === 'peach') { G.slowmo = C.PEACH_SLOW_TIME; G.magnetT = C.MAGNET_TIME; G.stats.peach++; sfx.power(); burst(it.x, it.y, '#ff9ab0', 18); pop(it.x, it.y - 24, 'Pêche d’immortalité', '#ffb3c8', 20); }
     }
   }

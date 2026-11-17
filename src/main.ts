@@ -13,6 +13,9 @@ import { initMenu, showMenu } from './ui/menu';
 import { initGameOver, showOver } from './ui/gameover';
 import { drawPreview, initShop, updatePreview } from './ui/shop';
 import { isShown } from './ui/screens';
+import { drawMapChoco, initMap } from './ui/map';
+import { initWin, showWin } from './ui/win';
+import { winHooks } from './world/level';
 
 function resize(): void {
   view.dpr = Math.min(window.devicePixelRatio || 1, C.DPR_MAX);
@@ -30,12 +33,14 @@ function frame(now: number): void {
   update(dt);
   render();
   if (isShown('shop')) { updatePreview(dt); drawPreview(); }
+  if (isShown('map')) drawMapChoco();
   requestAnimationFrame(frame);
 }
 
 addEventListener('resize', resize);
 deathHooks.onOver = showOver;
-initInput(); initMenu(); initGameOver(); initShop();
+winHooks.onWin = showWin;
+initInput(); initMenu(); initGameOver(); initShop(); initMap(); initWin();
 startMusic();
 resize(); refreshMissions(); showMenu();
 requestAnimationFrame(frame);

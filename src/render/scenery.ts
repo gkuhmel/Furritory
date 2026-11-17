@@ -57,7 +57,7 @@ export function drawLanterns(): void {
   const W = view.W, t = G.t;
   const fest = G.evt && G.evt.k === 'festival';
   for (const l of scenery.lanterns) {
-    ctx.save(); ctx.translate(l.x, l.y); ctx.scale(l.s, l.s); ctx.globalAlpha = fest || G.curSeason === 1 ? 1 : 0.75;
+    ctx.save(); ctx.translate(l.x, l.y); ctx.scale(l.s, l.s); ctx.globalAlpha = fest || G.curSeason === 1 || G.curSeason === 2 && G.mode === 'level' ? 1 : 0.75;
     ctx.fillStyle = 'rgba(255,120,60,0.28)'; ctx.beginPath(); ctx.arc(0, 0, 28, 0, 7); ctx.fill();
     ctx.fillStyle = '#e8343a'; ctx.beginPath(); ctx.ellipse(0, 0, 12, 15, 0, 0, 7); ctx.fill();
     ctx.fillStyle = '#ffcf4a'; ctx.fillRect(-7, -17, 14, 4); ctx.fillRect(-7, 13, 14, 4); ctx.fillStyle = 'rgba(255,220,120,0.8)'; ctx.fillRect(-1, 17, 2, 8); ctx.restore();
@@ -85,6 +85,10 @@ export function drawAmb(): void {
       ctx.beginPath();
       for (let i = 0; i < 5; i++) { const a = i * 1.2566 - 1.57; ctx.lineTo(Math.cos(a) * p.r, Math.sin(a) * p.r); ctx.lineTo(Math.cos(a + 0.63) * p.r * 0.45, Math.sin(a + 0.63) * p.r * 0.45); }
       ctx.fill();
+    }
+    else if (p.k === 'sparkle') {
+      ctx.globalAlpha = 0.5 + 0.5 * Math.abs(Math.sin(t * 3 + p.ph));
+      ctx.beginPath(); for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4, r = i % 2 ? p.r * 0.35 : p.r * 1.6; ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); } ctx.fill();
     }
     else { ctx.globalAlpha = 0.9; ctx.beginPath(); ctx.arc(0, 0, p.r, 0, 7); ctx.fill(); }
     ctx.restore();

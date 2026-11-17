@@ -1,10 +1,10 @@
 # Consignes pour Claude Code
 
 ## Projet
-Panda Roux Volant : jeu mobile web type Flappy Bird (panda roux, forêt chinoise, bonus, missions, saisons, dragon, boutique de tenues).
+Flying Choco : jeu mobile web type Flappy Bird avec Choco, un panda roux. Mode principal « Aventure » (5 mondes × 10 niveaux, carte, lettres CHOCO, étoiles) et mode infini (bonus, missions, saisons, dragon, boutique de tenues).
 
 - La spécification est dans `docs/specs.md`. Lis-la avant toute tâche.
-- Le prototype de référence est `prototype/index.html`. Il fait foi pour les sensations et les valeurs de réglage. Ne le modifie pas : c'est l'étalon.
+- Le prototype de référence est `prototype/index.html`. Il fait foi pour les sensations et les valeurs de réglage du mode infini. Ne le modifie pas : c'est l'étalon.
 
 ## Stack
 - Vite + TypeScript, Canvas 2D, sans framework ni moteur de jeu.
@@ -19,6 +19,3 @@ Panda Roux Volant : jeu mobile web type Flappy Bird (panda roux, forêt chinoise
 - Protège chaque accès à `localStorage` par try/catch.
 - Après une modification, vérifie que `npm run build` passe.
 - Git : commite et pousse directement sur `main`, sans branche ni pull request.
-
-## Première tâche
-Porter le prototype vers Vite + TypeScript à l'identique (étape 1 de la feuille de route), en suivant le découpage proposé dans la spec.

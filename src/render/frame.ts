@@ -6,7 +6,9 @@ import { ghostY } from '../world/ghost';
 import { ctx } from './canvas';
 import { drawSky } from './sky';
 import { drawAmb, drawFarBamboo, drawFog, drawGround, drawLanterns, drawMountains, drawWind } from './scenery';
-import { drawBridge, drawCascade, drawCone, drawCrane, drawMonkey, drawPipes } from './obstacles';
+import { drawBarAny, drawColumnAny, drawCone, drawFinish, drawFlyer, drawMonkey, drawPipes } from './obstacles';
+import { drawFarLayer } from './themed';
+import { theme } from '../world/level';
 import { drawItems } from './items';
 import { drawDragon, drawPanda } from './panda';
 import { drawFlash, drawOverlays, drawParticles, drawPops } from './fx';
@@ -18,8 +20,8 @@ export function render(): void {
   const { panda } = G, t = G.t;
   ctx.save();
   if (G.shake > 0) ctx.translate(rnd(-6, 6) * G.shake * 2, rnd(-6, 6) * G.shake * 2);
-  drawSky(); drawLanterns(); drawMountains(); drawFarBamboo();
-  G.cascades.forEach(drawCascade); drawPipes(); G.bridges.forEach(drawBridge); drawItems(); G.cranes.forEach(drawCrane); G.cones.forEach(drawCone);
+  drawSky(); drawLanterns(); drawMountains(); if (theme().far === 'bamboo') drawFarBamboo(); else drawFarLayer();
+  G.cascades.forEach(drawColumnAny); drawPipes(); drawFinish(); G.bridges.forEach(drawBarAny); drawItems(); G.cranes.forEach(drawFlyer); G.cones.forEach(drawCone);
   drawGround();
   if (G.boss) drawMonkey(G.boss);
   drawParticles();
@@ -34,7 +36,7 @@ export function render(): void {
   drawAmb(); drawWind(); drawFog();
   drawPops();
   drawOverlays();
-  if (G.state === 'play') drawHud();
+  if (G.state === 'play' || G.state === 'win') drawHud();
   drawFlash();
   ctx.restore();
 }

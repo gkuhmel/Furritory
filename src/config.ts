@@ -149,4 +149,51 @@ export const MUSIC_LOOKAHEAD = 0.12;
 
 // ---------- Sauvegarde ----------
 export const SAVE_KEY = 'pandaRoux2';
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
+
+// ---------- Aventure : mondes et niveaux ----------
+export const WORLDS = 5;
+export const LEVELS_PER_WORLD = 10;
+export const LETTERS = ['C', 'H', 'O', 'C', 'O'];
+export const LETTER_POS = [0.15, 0.35, 0.55, 0.72, 0.9]; // place des lettres dans le niveau (fraction)
+export const LETTER_POINTS = 5;
+export const STARS_2_LETTERS = 3; // lettres nécessaires pour 2 étoiles (5 pour 3 étoiles)
+export const CHOCO_BAO_MULT = 2; // bonus des 5 lettres : bao du niveau ×2
+export const WIN_DELAY_MS = 1300; // vol de sortie avant l'écran de victoire
+export const LEVEL_BOSS_AT = 0.5; // le singe arrive à mi-niveau (dernier niveau de chaque monde)
+
+export interface LevelDef {
+  pairs: number; // nombre de passages avant l'arrivée
+  gap: number; // hauteur du trou
+  spacing: number; // distance entre deux passages
+  speed: number; // vitesse de défilement
+  sway: number; // part de passages qui oscillent
+  swayAmp: number; // amplitude maximale d'oscillation
+  swayFreq: number; // vitesse d'oscillation
+  flyer: number; // probabilité d'un obstacle volant entre deux passages
+  column: number; // probabilité d'une colonne qui pousse vers le bas
+  bar: number; // probabilité d'une barre mortelle
+  letterEdge: number; // décalage des lettres vers les bords du trou (0 = centre)
+  events: boolean; // événements (vent, brume, fête) possibles
+  boss: boolean; // le singe farceur s'invite
+}
+
+// Difficulté en dents de scie : monte dans un monde, redescend un peu au début du suivant.
+export function levelDef(w: number, l: number): LevelDef {
+  const k = Math.min(1, (w * 8 + l) / 41);
+  return {
+    pairs: Math.round(12 + k * 24),
+    gap: Math.round(180 - k * 50),
+    spacing: Math.round(250 - k * 45),
+    speed: Math.round(165 + k * 95),
+    sway: w === 0 && l < 3 ? 0 : Math.min(0.7, 0.08 + w * 0.12 + l * 0.03),
+    swayAmp: 16 + k * 30,
+    swayFreq: 1.3 + k * 1.1,
+    flyer: l >= 2 ? 0.12 + 0.03 * w : 0,
+    column: l >= 4 ? 0.08 + 0.02 * w : 0,
+    bar: l >= 6 ? 0.08 + 0.02 * w : 0,
+    letterEdge: Math.min(0.32, k * 0.4),
+    events: w >= 1 && l >= 3,
+    boss: l === LEVELS_PER_WORLD - 1,
+  };
+}

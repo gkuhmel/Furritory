@@ -14,7 +14,7 @@ export function die(cause: DeathCause): void {
   if (!panda.alive) return;
   panda.alive = false; G.state = 'over'; G.overT = G.t; G.shake = 0.5; G.flash = 1; sfx.hit(); G.deathCause = cause;
   burst(panda.x, panda.y, '#ff7a3d', 24, 300);
-  G.newBest = G.score > S.best;
+  G.newBest = G.mode === 'endless' && G.score > S.best;
   if (G.newBest) { S.best = G.score; S.ghost = G.ghostRec.slice(0, C.GHOST_MAX); }
   const earned = Math.round(G.coins * mult()); S.bao += earned; saveS();
   setTimeout(() => deathHooks.onOver(earned), C.OVER_DELAY_MS);

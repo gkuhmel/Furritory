@@ -1,4 +1,5 @@
 // Bonus : bao, lanterne, nuage-éclair, pêche.
+import { LETTERS } from '../config';
 import { G } from '../state';
 import { ctx } from './canvas';
 
@@ -20,6 +21,15 @@ export function drawItems(): void {
       ctx.fillStyle = '#fff';
       ([[-10, 2, 10], [0, -4, 12], [11, 2, 10], [0, 6, 9]] as const).forEach(([x, y, r]) => { ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); });
       ctx.strokeStyle = '#38c8e0'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 6, 0.5, 5.5); ctx.stroke();
+    } else if (it.type === 'letter') {
+      // lettre CHOCO : médaille dorée qui scintille
+      const s = 1 + Math.sin(it.ph * 2) * 0.06; ctx.scale(s, s);
+      ctx.fillStyle = 'rgba(255,215,90,0.35)'; ctx.beginPath(); ctx.arc(0, 0, 26, 0, 7); ctx.fill();
+      ctx.fillStyle = '#ffcf4a'; ctx.beginPath(); ctx.arc(0, 0, 16, 0, 7); ctx.fill();
+      ctx.strokeStyle = '#c8901a'; ctx.lineWidth = 2.5; ctx.stroke();
+      ctx.fillStyle = '#6a3a1a'; ctx.font = '900 19px "Trebuchet MS",system-ui,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(LETTERS[it.idx ?? 0], 0, 1.5); ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = '#fff'; ctx.save(); ctx.rotate(it.ph); ctx.fillRect(-1, -22, 2, 6); ctx.restore();
     } else if (it.type === 'peach') {
       ctx.fillStyle = 'rgba(255,154,176,0.35)'; ctx.beginPath(); ctx.arc(0, 0, 28 + Math.sin(it.ph * 2) * 3, 0, 7); ctx.fill();
       const g = ctx.createRadialGradient(-4, -4, 2, 0, 0, 16); g.addColorStop(0, '#ffe3b0'); g.addColorStop(1, '#ff6f8f');

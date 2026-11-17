@@ -1,8 +1,11 @@
 // Mise à jour d'une image de jeu (logique uniquement) et lancement de partie.
 import * as C from './config';
 import { G, reset, view } from './state';
-import { lerpPal, updateSeason } from './world/seasons';
-import { updateScenery } from './world/scenery';
+import { lerpPal, snapPal, updateSeason } from './world/seasons';
+import { THEMES } from './world/themes';
+import { flyAway, updateFinish } from './world/level';
+import { banner } from './world/fx';
+import { resetAmb, updateScenery } from './world/scenery';
 import { updateFx } from './world/fx';
 import { fallPanda, hoverPanda, updatePanda, updatePandaBounds } from './world/panda';
 import { updateEvents } from './world/events';
@@ -16,9 +19,28 @@ import { updateBridges } from './world/bridges';
 import { updateItems } from './world/items';
 import { checkMissions, refreshMissions } from './meta/missions';
 
+// Partie du mode infini (comportement du prototype).
 export function startRun(): void {
+  const fromLevel = G.mode === 'level';
   refreshMissions(); reset(); G.state = 'play';
+  G.mode = 'endless'; G.world = 0; G.level = 0; G.def = null;
+  if (fromLevel) { snapPal(0); resetAmb(); }
   G.panda.vy = C.START_VY;
+}
+
+// Niveau de l'aventure.
+export function startLevel(w: number, l: number): void {
+  refreshMissions(); reset(); G.state = 'play';
+  G.mode = 'level'; G.world = w; G.level = l; G.def = C.levelDef(w, l);
+  G.nextPipe = 120; // premier passage un peu plus loin
+  snapPal(THEMES[w].pal); resetAmb();
+  G.panda.vy = C.START_VY;
+  banner(`${THEMES[w].name} · ${l + 1}`, '#fff', 28);
+  if (l === 2 || l === 4 || l === 6) {
+    const th = THEMES[w];
+    const what = l === 2 ? th.flyerName : l === 4 ? th.columnName : th.barName;
+    banner(`Nouveau : ${what} !`, '#ffd27a', 22);
+  }
 }
 
 export function update(dt: number): void {
@@ -30,8 +52,9 @@ export function update(dt: number): void {
   updateScenery(dt, G.state === 'play' ? G.speed : C.MENU_SCROLL);
   updateFx(dt);
 
-  if (G.state === 'menu' || G.state === 'shop') { hoverPanda(dt, view.W); return; }
+  if (G.state === 'menu' || G.state === 'shop' || G.state === 'map') { hoverPanda(dt, view.W); return; }
   if (G.state === 'over') { fallPanda(dt); return; }
+  if (G.state === 'win') { flyAway(dt); return; }
 
   // minuteurs
   if (G.slowmo > 0) G.slowmo -= dt;
@@ -43,7 +66,8 @@ export function update(dt: number): void {
 
   updateEvents(dt);
 
-  G.speed = Math.min(C.SPEED_BASE + G.score * C.SPEED_PER_POINT, C.SPEED_MAX) * (G.dashT > 0 ? C.DASH_SPEED_MULT : G.dragonT > 0 ? C.DRAGON_SPEED_MULT : 1);
+  const base = G.mode === 'level' ? G.def!.speed : Math.min(C.SPEED_BASE + G.score * C.SPEED_PER_POINT, C.SPEED_MAX);
+  G.speed = base * (G.dashT > 0 ? C.DASH_SPEED_MULT : G.dragonT > 0 ? C.DRAGON_SPEED_MULT : 1);
   const move = G.speed * tdt; G.distTot += move;
 
   recordGhost();
@@ -59,6 +83,7 @@ export function update(dt: number): void {
   if (updateCones(tdt)) return;
   updateDragonRain(dt);
   updateItems(move, tdt, dt);
-  checkGhost();
+  if (G.mode === 'level') updateFinish(move);
+  if (G.mode === 'endless') checkGhost();
   checkMissions();
 }

@@ -1,15 +1,17 @@
 // État de la partie (logique uniquement) et remise à zéro.
 import * as C from './config';
+import type { LevelDef } from './config';
 import { rnd } from './util';
 
-export type Screen = 'menu' | 'play' | 'over' | 'shop';
-export type ItemType = 'bao' | 'lantern' | 'cloud' | 'peach';
+export type Screen = 'menu' | 'play' | 'over' | 'win' | 'shop' | 'map';
+export type Mode = 'endless' | 'level';
+export type ItemType = 'bao' | 'lantern' | 'cloud' | 'peach' | 'letter';
 export type EventKind = 'wind' | 'festival' | 'fog';
 export type DeathCause = 'bambou' | 'sol' | 'grue' | 'pomme' | 'pont';
 
 export interface Panda { x: number; y: number; vy: number; rot: number; wing: number; alive: boolean }
-export interface Pipe { x: number; cy: number; base: number; gap: number; passed: boolean; sway: number; ph: number; smashed?: boolean }
-export interface Item { type: ItemType; x: number; y: number; r: number; ph: number; vx?: number; vy?: number; thrown?: boolean; got?: boolean }
+export interface Pipe { x: number; cy: number; base: number; gap: number; passed: boolean; sway: number; ph: number; freq: number; smashed?: boolean }
+export interface Item { type: ItemType; x: number; y: number; r: number; ph: number; vx?: number; vy?: number; thrown?: boolean; got?: boolean; idx?: number }
 export interface Particle { x: number; y: number; vx: number; vy: number; l: number; ml: number; c: string; r: number; g: number; a?: number; sh?: 'e' }
 export interface Pop { x: number; y: number; txt: string; col: string; size: number; l: number }
 export interface Banner { txt: string; col: string; size: number; l: number }
@@ -66,6 +68,13 @@ function freshRun() {
     ghostDone: false,
     deathCause: null as DeathCause | null,
     newBest: false,
+    // aventure
+    letters: [false, false, false, false, false],
+    pairsSpawned: 0,
+    passed: 0, // passages franchis (barre de progression)
+    finish: null as { x: number; passed: boolean } | null,
+    bossDone: false,
+    stars: 0,
   };
 }
 
@@ -76,6 +85,10 @@ export const view = G_view;
 // État global : écran courant, horloge, effets d'écran, puis données de la partie.
 export const G = {
   state: 'menu' as Screen,
+  mode: 'endless' as Mode,
+  world: 0, // monde du niveau en cours (0 en mode infini)
+  level: 0, // niveau dans le monde
+  def: null as LevelDef | null, // réglages du niveau en cours
   t: 0,
   shake: 0,
   flash: 0,

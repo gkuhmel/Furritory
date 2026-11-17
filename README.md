@@ -1,6 +1,6 @@
-# Panda Roux Volant
+# Flying Choco
 
-Jeu mobile web type Flappy Bird : un panda roux plane entre les bambous d'une forêt chinoise colorée, ramasse des bao, enchaîne les combos, chevauche un dragon et s'habille à la boutique.
+Jeu mobile web type Flappy Bird : Choco, un panda roux, traverse 5 mondes de 10 niveaux (forêt de bambous, rizières, ville des lanternes, montagnes enneigées, palais céleste), ramasse les lettres C·H·O·C·O pour gagner ses étoiles, chevauche un dragon et s'habille à la boutique. Un mode infini est aussi disponible.
 
 - `docs/specs.md` : la spécification complète.
 - `prototype/index.html` : le prototype jouable de référence (un seul fichier, à ouvrir dans un navigateur).

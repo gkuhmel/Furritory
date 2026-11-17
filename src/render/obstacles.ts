@@ -6,6 +6,24 @@ import { css } from '../util';
 import { pal } from '../world/seasons';
 import { ctx } from './canvas';
 import { leaf } from './scenery';
+import { theme } from '../world/level';
+import { drawBar, drawColumn, drawKite, drawRocket, drawSnowball, drawStormcloud, icePillar, jadePillar, polePillar, templePillar } from './themed';
+
+const FLYERS = { crane: (c: Crane) => drawCrane(c), kite: drawKite, rocket: drawRocket, snowball: drawSnowball, stormcloud: drawStormcloud };
+export const drawFlyer = (c: Crane): void => FLYERS[theme().flyer](c);
+export const drawColumnAny = (c: Cascade): void => (theme().column === 'waterfall' ? drawCascade(c) : drawColumn(c));
+export const drawBarAny = (b: Bridge): void => (theme().bar === 'bridge' ? drawBridge(b) : drawBar(b));
+
+// Arche d'arrivée : deux poteaux rouges et une banderole.
+export function drawFinish(): void {
+  const f = G.finish; if (!f) return;
+  const x = f.x, t = G.t;
+  ctx.fillStyle = '#c8282e'; ctx.fillRect(x - 6, 30, 12, GROUND - 30); ctx.fillRect(x + 54, 30, 12, GROUND - 30);
+  ctx.fillStyle = '#ffcf4a'; ctx.fillRect(x - 14, 22, 88, 10);
+  ctx.fillStyle = '#ffffff'; for (let i = 0; i < 6; i++) for (let j = 0; j < 2; j++) if ((i + j) % 2) ctx.fillRect(x - 10 + i * 13.3, 34 + j * 10, 13.3, 10);
+  ctx.fillStyle = '#1b1030'; for (let i = 0; i < 6; i++) for (let j = 0; j < 2; j++) if ((i + j) % 2 === 0) ctx.fillRect(x - 10 + i * 13.3, 34 + j * 10, 13.3, 10);
+  for (let i = 0; i < 7; i++) { ctx.fillStyle = ['#ff4a5a', '#ffcf4a', '#7df9ff', '#9be37a'][i % 4]; ctx.beginPath(); const fx = x + i * 10 - 4, fy = 60 + Math.sin(t * 4 + i) * 3; ctx.moveTo(fx, fy); ctx.lineTo(fx + 8, fy); ctx.lineTo(fx + 4, fy + 10); ctx.fill(); }
+}
 
 function bambooStalk(x: number, y1: number, y2: number, cap: 'top' | 'bottom'): void {
   const w = PIPE_W, g = ctx.createLinearGradient(x, 0, x + w, 0);
@@ -20,10 +38,13 @@ function bambooStalk(x: number, y1: number, y2: number, cap: 'top' | 'bottom'): 
   const ly = cap === 'top' ? y2 - 40 : y1 + 40; leaf(x + w - 4, ly, 1); leaf(x + 4, ly + (cap === 'top' ? -60 : 60), -1);
 }
 
+const PILLARS = { bamboo: bambooStalk, pole: polePillar, temple: templePillar, ice: icePillar, jade: jadePillar };
+
 export function drawPipes(): void {
+  const stalk = PILLARS[theme().pillar];
   for (const p of G.pipes) {
     ctx.globalAlpha = p.smashed ? 0.3 : 1;
-    bambooStalk(p.x, -20, p.cy - p.gap / 2, 'top'); bambooStalk(p.x, p.cy + p.gap / 2, GROUND, 'bottom');
+    stalk(p.x, -20, p.cy - p.gap / 2, 'top'); stalk(p.x, p.cy + p.gap / 2, GROUND, 'bottom');
     ctx.globalAlpha = 1;
   }
 }

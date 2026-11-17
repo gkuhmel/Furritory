@@ -1,10 +1,45 @@
-# Panda Roux Volant — spécification
+# Flying Choco — spécification
 
-> Jeu mobile web (iPhone en priorité) de type Flappy Bird : un panda roux plane entre des bambous dans une forêt chinoise colorée, ramasse des bao, enchaîne les combos et habille son panda.
+> Jeu mobile web (iPhone en priorité) de type Flappy Bird : Choco, un panda roux, plane entre des bambous dans une forêt chinoise colorée, ramasse des bao, enchaîne les combos et habille son panda.
 >
 > Le prototype jouable de référence est `prototype/index.html` (un seul fichier, Canvas 2D, aucune dépendance). **Il fait foi pour les sensations et les valeurs de réglage** : la version Claude Code doit le reproduire fidèlement avant d'aller plus loin.
 
 ---
+
+## 0. Aventure (mode principal)
+
+Ajouté après le portage. Le mode infini décrit dans les sections suivantes reste disponible dès le menu (« Mode infini ») et garde exactement les réglages du prototype.
+
+### Mondes et niveaux
+- **5 mondes × 10 niveaux**, débloqués dans l'ordre (réussir un niveau ouvre le suivant). Essais illimités, pas de vies.
+- Un niveau = un nombre fixe de passages puis une **arche d'arrivée**. Aucun score affiché : barre de progression et lettres dans la bande du sol.
+- Chaque monde a sa palette, son décor lointain, ses particules et **son habillage d'obstacles** (même mécanique, autre dessin) :
+
+| # | Monde | Piliers | Volant (dès niv. 3) | Colonne qui pousse (dès niv. 5) | Barre mortelle (dès niv. 7) |
+|---|---|---|---|---|---|
+| 1 | Forêt de bambous | bambous | grues | cascades | ponts de corde |
+| 2 | Rizières au crépuscule | poteaux de bois | cerfs-volants | canaux d'irrigation | cordes à épouvantails |
+| 3 | Ville des lanternes | piliers de temple | fusées de fête | fumée d'encens | guirlandes de lanternes |
+| 4 | Montagnes enneigées | pics de glace | boules de neige | avalanches | rideaux de stalactites |
+| 5 | Palais céleste | colonnes de jade | nuages d'orage | souffles célestes | éclairs |
+
+- Le **singe farceur** arrive à mi-parcours du **niveau 10** de chaque monde.
+- Les événements (vent, fête, brume) apparaissent à partir du monde 2, niveau 4.
+
+### Difficulté
+Courbe en dents de scie (`levelDef` dans `src/config.ts`) : elle monte dans un monde et redescend un peu au début du suivant. Avec k de 0 à 1 :
+passages 12 → 36, trou 180 → 130 px, espacement 250 → 205 px, vitesse 165 → 260 px/s, part de piliers qui oscillent de 0 (monde 1, niveaux 1-3) jusqu'à 70 %, amplitude et vitesse d'oscillation croissantes.
+
+### Lettres CHOCO et étoiles
+- 5 lettres **C·H·O·C·O** par niveau, placées dans des trous de passages (de plus en plus près des bords).
+- 1★ = arrivée, 2★ = au moins 3 lettres, 3★ = les 5 lettres, qui doublent aussi les bao gagnés dans le niveau.
+- On garde la meilleure note de chaque niveau.
+
+### Carte
+Écran « Aventure » : carte verticale qui défile, un tronçon par monde (dégradé, décor, titre et étoiles du monde), chemin pointillé entre des médaillons numérotés, étoiles sous les niveaux réussis, cadenas sur les niveaux fermés, Choco qui plane au-dessus du niveau en cours. Après une victoire : étoiles, lettres, bao, « Niveau suivant », « Rejouer », « Carte ».
+
+### Sauvegarde
+Version 2 : ajoute `levels` (étoiles par niveau, index = monde × 10 + niveau). Les sauvegardes v1 et du prototype sont migrées.
 
 ## 1. Intention
 
@@ -188,7 +223,8 @@ Prévoir un numéro de version et une migration dès la version Claude Code.
 
 ## 13. Feuille de route
 
-1. **Portage** du prototype vers Vite + TypeScript, à l'identique (sensations, valeurs, écrans).
+1. ~~**Portage** du prototype vers Vite + TypeScript, à l'identique (sensations, valeurs, écrans).~~ Fait.
+1 bis. ~~**Aventure** : 5 mondes × 10 niveaux, carte, lettres CHOCO, obstacles par monde (section 0).~~ Fait.
 2. **Finition** : pause, PWA, FR/EN, réglages, tutoriel de première partie (skill `/finition`).
 3. **Équilibrage** : courbe de difficulté, prix, fréquence des bonus et des obstacles, après tests sur iPhone.
 4. **Contenu** : plus de saisons/biomes, nouvelles tenues, nouveaux événements.
@@ -196,6 +232,6 @@ Prévoir un numéro de version et une migration dès la version Claude Code.
 
 ## 14. Points ouverts
 
-- Nom définitif du jeu (« Panda Roux Volant » est provisoire ; le dépôt s'appelle Furritory).
+- Nom du jeu : **Flying Choco** (le dépôt s'appelle Furritory).
 - Le fantôme doit-il aussi enregistrer les tenues portées ce jour-là ?
 - Faut-il un petit délai d'invulnérabilité au tout début de partie ?

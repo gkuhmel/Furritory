@@ -4,7 +4,7 @@ import { G } from './state';
 import { initAudio } from './audio/sfx';
 import { flap } from './world/panda';
 import { cv } from './render/canvas';
-import { play } from './ui/screens';
+import { play, replay } from './ui/screens';
 
 export function initInput(): void {
   // l'audio ne peut démarrer que sur un geste de l'utilisateur (Safari iOS)
@@ -14,7 +14,8 @@ export function initInput(): void {
     if (e.code === 'Space' || e.code === 'ArrowUp') {
       e.preventDefault(); initAudio();
       if (G.state === 'play') flap();
-      else if (G.state === 'menu' || (G.state === 'over' && G.t - G.overT > RESTART_KEY_DELAY)) play();
+      else if (G.state === 'menu') play();
+      else if (G.state === 'over' && G.t - G.overT > RESTART_KEY_DELAY) replay();
     }
   });
 }

@@ -32,11 +32,12 @@ export function buildScenery(): void {
 }
 
 function newAmb(any: boolean): Amb {
-  const k = SEASONS[G.curSeason % 4].p;
+  const k = SEASONS[G.curSeason].p;
   const a: Amb = { k, x: any ? rnd(0, view.W) : view.W + 10, y: rnd(-20, H * 0.75), a: rnd(0, 6), va: rnd(-3, 3), ph: rnd(0, 6), vx: 0, vy: 0, r: 0, c: '' };
   if (k === 'petal') Object.assign(a, { vx: rnd(-60, -20), vy: rnd(10, 40), r: rnd(2, 4.5), c: Math.random() < 0.7 ? '#ffb3c8' : '#ffd27a' });
   if (k === 'firefly') Object.assign(a, { vx: rnd(-30, -8), vy: 0, r: rnd(1.5, 2.8), y: rnd(GROUND - 320, GROUND - 20), c: '#fff59a' });
   if (k === 'maple') Object.assign(a, { vx: rnd(-70, -30), vy: rnd(20, 50), r: rnd(4, 6.5), c: ['#e8343a', '#ff7a2a', '#ffb02a'][Math.floor(rnd(0, 3))] });
+  if (k === 'sparkle') Object.assign(a, { vx: rnd(-30, -10), vy: rnd(8, 25), r: rnd(1.5, 3), c: Math.random() < 0.6 ? '#fff6c0' : '#ffffff' });
   if (k === 'snow') Object.assign(a, { vx: rnd(-40, -10), vy: rnd(30, 70), r: rnd(1.5, 3.5), c: '#ffffff' });
   return a;
 }
@@ -52,4 +53,10 @@ export function updateScenery(dt: number, scroll: number): void {
     l.x -= (G.state === 'play' ? G.speed * 0.15 : 12) * dt; l.y += Math.sin(t + l.ph) * 0.15;
     if (l.x < -30) { l.x = view.W + 30; l.y = rnd(60, 340); }
   }
+}
+
+// Renouvelle les particules d'ambiance (changement de monde).
+export function resetAmb(): void {
+  scenery.amb = [];
+  for (let i = 0; i < 45; i++) scenery.amb.push(newAmb(true));
 }

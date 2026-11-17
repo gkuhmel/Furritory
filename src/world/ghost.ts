@@ -16,6 +16,6 @@ export function checkGhost(): void {
 
 // Hauteur du fantôme à la distance courante (null s'il n'y en a pas).
 export function ghostY(): number | null {
-  if (G.state !== 'play' || !S.ghost || G.ghostDone) return null;
+  if (G.state !== 'play' || G.mode !== 'endless' || !S.ghost || G.ghostDone) return null;
   return S.ghost[Math.floor(G.distTot / GHOST_STEP)] ?? null;
 }

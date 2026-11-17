@@ -6,7 +6,8 @@ import { banner } from './fx';
 
 export function updateEvents(dt: number): void {
   if (G.evt) { G.evt.t -= dt; if (G.evt.t <= 0) G.evt = null; return; }
-  if (G.boss || G.dragonT > 0 || G.score < C.EVENT_MIN_SCORE) return;
+  if (G.boss || G.dragonT > 0 || G.finish) return;
+  if (G.mode === 'endless' ? G.score < C.EVENT_MIN_SCORE : !G.def!.events) return;
   G.evtT -= dt;
   if (G.evtT > 0) return;
   const k: EventKind = (['wind', 'festival', 'fog'] as const)[Math.floor(rnd(0, 3))];

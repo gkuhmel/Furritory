@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Panda Roux Volant</title>
+<title>Flying Choco</title>
 <link rel="stylesheet" href="/src/style.css">
 </head>
 <body>
@@ -11,12 +11,13 @@
 
 <div id="menu" class="screen">
   <div class="card">
-    <h1>Panda Roux<small>Volant</small></h1>
-    <div class="stats"><span>🏆 <b id="mBest">0</b></span><span>🥟 <b id="mBao">0</b></span><span>✨ bao ×<b id="mMult">1</b></span></div>
+    <h1>Flying<small>Choco</small></h1>
+    <div class="stats"><span>⭐ <b id="mStars">0</b></span><span>🏆 <b id="mBest">0</b></span><span>🥟 <b id="mBao">0</b></span><span>✨ bao ×<b id="mMult">1</b></span></div>
     <div class="missions" id="mMissions"></div>
-    <button class="big" id="bPlay">Jouer</button>
+    <button class="big" id="bPlay">Aventure</button>
+    <div class="row"><button id="bEndless">♾️ Mode infini</button></div>
     <div class="row"><button id="bShop">👘 Boutique</button><button id="bSound" style="flex:0 0 64px">🔊</button></div>
-    <p class="legend">🥟 bao · 🏮 bouclier · ☁️ nuage-éclair · 🍑 ralenti + aimant<br>12 bao = 🐉 dragon · frôle les bambous pour enchaîner les combos</p>
+    <p class="legend">Attrape les lettres <b>C·H·O·C·O</b> : 3 lettres = ⭐⭐, les 5 = ⭐⭐⭐ et bao ×2<br>🥟 bao · 🏮 bouclier · ☁️ nuage-éclair · 🍑 ralenti + aimant · 12 bao = 🐉 dragon</p>
   </div>
 </div>
 
@@ -30,6 +31,24 @@
     <div class="missions" id="oMissions"></div>
     <button class="big" id="bAgain">Rejouer</button>
     <div class="row"><button id="bShop2">👘 Boutique</button><button id="bMenu">Menu</button></div>
+  </div>
+</div>
+
+<div id="map" class="screen mapscreen hidden">
+  <div class="maptop"><button id="bMapBack">◀ Menu</button><span>⭐ <b id="mapStars">0</b></span><span>🥟 <b id="mapBao">0</b></span></div>
+  <div id="mapScroll" class="mapscroll"><div id="mapInner" class="mapinner"></div></div>
+</div>
+
+<div id="win" class="screen hidden">
+  <div class="card">
+    <h2>Niveau réussi !</h2>
+    <div id="wLevel" style="font-size:15px;opacity:.9"></div>
+    <div id="wStars" class="bigstars"></div>
+    <div id="wLetters" class="letters"></div>
+    <div class="stats"><span id="wBao"></span><span>💰 <b id="wWallet"></b></span></div>
+    <div class="missions" id="wMissions"></div>
+    <button class="big" id="bNext">Niveau suivant</button>
+    <div class="row"><button id="bWinAgain">Rejouer</button><button id="bWinMap">🗺️ Carte</button></div>
   </div>
 </div>
 

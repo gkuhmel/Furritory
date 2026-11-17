@@ -12,7 +12,7 @@ export function txt(s: string | number, x: number, y: number, size: number, col 
 
 export function drawHud(): void {
   const W = view.W;
-  txt(G.score, W / 2, 70, 52);
+  if (G.mode === 'level') drawLevelHud(W); else txt(G.score, W / 2, 70, 52);
   txt('🥟 ' + G.coins, 16, 34, 20, '#fff4d6', 'left');
   // jauge du dragon
   ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(16, 44, 110, 12);
@@ -30,4 +30,18 @@ export function drawHud(): void {
   if (G.combo > 1) txt('COMBO ×' + G.combo, W - 16, 34, 20, '#7df9ff', 'right');
   if (mult() > 1) txt('bao ×' + mult(), W - 16, G.combo > 1 ? 58 : 34, 14, '#ffcf4a', 'right');
   G.banners.forEach((b, i) => { ctx.globalAlpha = Math.min(1, b.l * 1.5); txt(b.txt, W / 2, 150 + i * 40, b.size, b.col); ctx.globalAlpha = 1; });
+}
+
+// Aventure : barre de progression vers l'arrivée et lettres CHOCO, dans la bande du sol (rien n'y gêne le jeu).
+function drawLevelHud(W: number): void {
+  const d = G.def!, bw = Math.min(200, W * 0.6), x = W / 2 - bw / 2, y = C.GROUND + 9;
+  const k = Math.min(1, G.passed / d.pairs);
+  ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(x, y, bw, 9);
+  ctx.fillStyle = '#9be37a'; ctx.fillRect(x, y, bw * k, 9);
+  txt('🏁', x + bw + 13, y + 10, 13, '#fff', 'center');
+  C.LETTERS.forEach((L, i) => {
+    const lx = W / 2 + (i - 2) * 26, ly = C.H - 18, got = G.letters[i];
+    ctx.fillStyle = got ? '#ffcf4a' : 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.arc(lx, ly, 11, 0, 7); ctx.fill();
+    txt(L, lx, ly + 6, 16, got ? '#6a3a1a' : 'rgba(255,255,255,0.5)', 'center', got ? '#fff4d6' : 'rgba(0,0,0,0)');
+  });
 }

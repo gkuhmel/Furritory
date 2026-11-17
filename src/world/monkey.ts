@@ -9,7 +9,10 @@ import { collide } from './damage';
 export function updateMonkey(tdt: number, dt: number): void {
   const { panda } = G;
   const W = view.W;
-  if (!G.boss && G.score >= G.nextBoss && G.dragonT <= 0) {
+  const due = G.mode === 'endless'
+    ? G.score >= G.nextBoss
+    : G.def!.boss && !G.bossDone && G.pairsSpawned >= Math.round(G.def!.pairs * C.LEVEL_BOSS_AT);
+  if (!G.boss && due && G.dragonT <= 0) {
     G.boss = { x: W + 70, y: 200, phase: 'in', t: 0, throwT: C.MONKEY_FIRST_THROW, arm: 0, life: C.MONKEY_LIFE };
     banner('🐒 Le singe farceur arrive !', '#ffd27a', 26);
   }
@@ -35,7 +38,7 @@ export function updateMonkey(tdt: number, dt: number): void {
   }
   if (boss.phase === 'out') {
     boss.x += 260 * dt; boss.y -= 60 * dt;
-    if (boss.x > W + 90) { G.boss = null; G.nextBoss = G.score + C.MONKEY_EVERY; G.nextPipe = C.MONKEY_NEXT_PIPE; }
+    if (boss.x > W + 90) { G.boss = null; G.bossDone = true; G.nextBoss = G.score + C.MONKEY_EVERY; G.nextPipe = C.MONKEY_NEXT_PIPE; }
   }
 }
 
