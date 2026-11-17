@@ -1,196 +1,201 @@
-# Furritory — Spécifications du prototype
+# Panda Roux Volant — spécification
 
-> Nom : **Furritory** (*fur* + *territory* : ton territoire est en fourrure).
-> Objectif du proto : vérifier que **tracer des boucles au pouce sur un globe et voir des pays basculer** est agréable, lisible et donne envie de rejouer.
-
----
-
-## 1. Vision
-
-Un animal-figurine court sur un globe-plateau de jeu. Il sort de son territoire en laissant des empreintes, fait une boucle, rentre chez lui : tout ce qu'il a entouré devient à lui. Dès qu'il possède plus de la moitié d'un pays, **le pays entier bascule**. Objectif : conquérir le monde.
-
-**Pilier unique : on ne peint pas des pixels, on fait basculer des pays.**
-
-Ce qui distingue le jeu du genre « boucle de territoire » :
-- le terrain est la vraie carte du monde, sur un globe sans bords ;
-- l'unité de score est le pays, pas le pourcentage de surface ;
-- les océans sont la zone de risque : on les traverse, on n'y capture rien.
+> Jeu mobile web (iPhone en priorité) de type Flappy Bird : un panda roux plane entre des bambous dans une forêt chinoise colorée, ramasse des bao, enchaîne les combos et habille son panda.
+>
+> Le prototype jouable de référence est `prototype/index.html` (un seul fichier, Canvas 2D, aucune dépendance). **Il fait foi pour les sensations et les valeurs de réglage** : la version Claude Code doit le reproduire fidèlement avant d'aller plus loin.
 
 ---
 
-## 2. Périmètre du proto
+## 1. Intention
 
-### Inclus
-- Globe 3D style plateau de jeu, monde entier, pays et frontières réels (simplifiés).
-- Un pion contrôlé à un pouce, qui avance en continu (cf. §4).
-- Traînée d'empreintes, fermeture de boucle, capture de zone (cf. §5).
-- Bascule d'un pays à 50 % (cf. §6).
-- Océan : traversable en barque, non capturable (cf. §7).
-- 5 rivaux contrôlés par l'ordinateur (cf. §8).
-- Capitales : passer dessus avec sa traînée fait basculer le pays (cf. §6).
-- Partie chronométrée de 4 min ; score = nombre de pays ; meilleur score sauvegardé localement.
-- 6 animaux jouables, tous disponibles d'emblée (cf. §9).
-- Mini-carte, panneau de debug.
+- **Une touche, une partie de 30 s à 3 min**, et l'envie immédiate de relancer.
+- Trois moteurs de rejouabilité, validés :
+  1. **Missions** qui font monter un multiplicateur de bao pour toujours.
+  2. **Saisons** qui défilent avec la distance (curiosité : « je veux voir l'hiver »).
+  3. **Fantôme du record** qui vole à côté de toi.
+- Une **boutique de tenues** purement esthétique, payée en bao, pour donner un but à long terme.
+- Ton : coloré, doux, kawaii ; jamais punitif ni agressif.
 
-### Exclus (pour plus tard)
-- Bonus à ramasser, monuments, bonus de continent.
-- Atlas persistant, déblocage des animaux par pays, défi du jour.
-- Multijoueur réel, comptes, classements.
-- Relief qui influe sur la vitesse, météo, jour/nuit.
-- Menus complets, réglages, langues, tutoriel, PWA, sons élaborés.
+## 2. Plateforme et technique (cible)
 
----
+| Sujet | Choix |
+|---|---|
+| Plateforme | Navigateur mobile (Safari iOS d'abord), jouable aussi sur ordinateur |
+| Stack | Vite + TypeScript, Canvas 2D, **sans framework ni moteur** |
+| Audio | Web Audio API, sons et musique **synthétisés** (pas de fichiers audio au départ) |
+| Graphismes | Dessinés en code (formes vectorielles Canvas) comme dans le proto ; sprites possibles plus tard |
+| Sauvegarde | `localStorage`, clé versionnée, lecture/écriture protégées par try/catch |
+| Déploiement | Site statique (Cloudflare, comme les autres projets) |
+| Plus tard | PWA (plein écran depuis l'écran d'accueil), langues FR/EN |
 
-## 3. Stack et contraintes techniques
+### Repères techniques à conserver du proto
+- Monde logique de **640 px de haut** ; la largeur s'adapte au ratio d'écran (bornée entre 320 et 1000).
+- Rendu à la densité de l'écran (`devicePixelRatio` plafonné à 2).
+- Boucle `requestAnimationFrame`, `dt` plafonné à 33 ms.
+- Un **facteur de temps** global (ralenti pêche ×0,55, ralenti « au pixel » ×0,3) appliqué à la physique et au défilement, pas à l'interface.
+- `touch-action: none`, pas de zoom, pas de sélection de texte.
 
-- **Vite + TypeScript strict**, sans framework UI, rendu **Three.js** (WebGL).
-- Cibles : **Safari iPhone et iPad**, en portrait comme en paysage, 60 fps.
-- Tout s'adapte à la taille d'écran, sans mise en page figée :
-  - la portion de globe visible en partie est calée sur la plus petite dimension de l'écran, pour que le jeu ait la même difficulté sur téléphone et sur tablette ;
-  - le HUD et la mini-carte se placent dans les coins en respectant les marges de sécurité (encoche, barre d'accueil) ;
-  - le contrôle ne dépend que de la direction du glissé, jamais de sa longueur en pixels.
-- Entrées : Pointer Events, `touch-action: none`, pas de zoom, de scroll ni de sélection.
-- Boucle à **pas de temps fixe** avec rendu interpolé ; la simulation ne dépend pas du framerate.
-- Tous les paramètres de gameplay dans `src/config.ts`.
-- `localStorage` toujours dans un `try/catch`.
-- Déploiement : Cloudflare Workers (assets statiques), comme Traverser.
-
-### Monde et unités
-- Le globe a un rayon de 1. Les positions sont des vecteurs unitaires, les distances des angles (degrés), les vitesses des degrés par seconde.
-- **Grille de territoire** : sphère découpée en cube projeté (6 faces × N × N cases, N = 256, soit des cases d'environ 0,35°). Pas de déformation aux pôles, voisinage simple pour le remplissage.
-- Chaque case porte : terre ou mer, identifiant du pays, propriétaire, traînée éventuelle.
-- La table « case → pays » est **précalculée au build** à partir de Natural Earth (domaine public) et livrée comme fichier binaire.
-- Les très petits pays sont grossis à un minimum de cases (`minCountryCells`) ou fusionnés avec un voisin, pour rester jouables au doigt.
-
-### Arborescence suggérée
+### Découpage proposé (src/)
 ```
-scripts/
-  build-world.ts   // Natural Earth -> grille pays + capitales (au build)
-src/
-  main.ts          // bootstrap, resize, boucle
-  config.ts        // tous les paramètres
-  world.ts         // grille, pays, capitales, terre/mer
-  territory.ts     // traînées, fermeture de boucle, capture, bascule
-  pawn.ts          // déplacement d'un pion sur la sphère
-  input.ts         // glisser du pouce -> cap
-  bots.ts          // rivaux
-  game.ts          // état de partie, chrono, score, fin
-  camera.ts        // caméra suiveuse
-  render/          // globe, zones, pions, mini-carte, HUD
-  debug.ts         // panneau de debug (?debug=1)
+main.ts          démarrage, redimensionnement, boucle
+config.ts        toutes les constantes de réglage (section 10)
+state.ts         état de la partie, reset
+save.ts          sauvegarde versionnée
+input.ts         toucher / clic / espace
+audio/sfx.ts     effets sonores
+audio/music.ts   musique pentatonique réactive
+world/           pipes.ts, items.ts, cranes.ts, cascades.ts, bridges.ts, monkey.ts, events.ts, seasons.ts, dragon.ts, ghost.ts
+render/          sky.ts, scenery.ts, panda.ts (+ tenues), obstacles.ts, items.ts, fx.ts, hud.ts
+meta/            missions.ts, shop.ts
+ui/              menu.ts, gameover.ts, shop.ts (écrans en HTML/CSS par-dessus le canvas)
 ```
 
----
+## 3. Boucle de jeu
 
-## 4. Le pion et le contrôle (point à valider en premier)
+- **Contrôle** : toucher l'écran (ou espace / flèche haut) = battement d'ailes, vitesse verticale fixée à −430 px/s.
+- **Gravité** 1500 px/s². Inclinaison du panda proportionnelle à sa vitesse verticale.
+- Le monde défile de droite à gauche. Vitesse : 170 px/s, +2,2 par point, plafond 300.
+- **Paires de bambous** espacées de 240 px, largeur 64 px. Trou de 175 px qui rétrécit de 1,1 px par point jusqu'à 128 px.
+- À partir de quelques points, une part croissante des bambous **oscille** verticalement (jusqu'à 45 % des paires, amplitude 18–40 px).
+- **Mort** : toucher un bambou, un obstacle mortel ou la rivière en bas, sauf invincibilité ou bouclier.
+- **Score** : +1 par paire franchie, +2 par bao, bonus de combo, +10 si on survit au singe.
 
-- Le pion avance **en continu** à `pawnSpeed`. Il ne s'arrête jamais.
-- **Glisser le pouce n'importe où donne un cap** : la direction du glissé à l'écran devient la direction visée du pion. Le pion tourne vers ce cap à `turnRate` (virage fluide, pas de demi-tour instantané).
-- Le doigt ne fait jamais tourner le globe. Pas de caméra libre en partie.
-- **Caméra** : verrouillée sur le pion, qui reste au centre de l'écran, vue plongeante inclinée. Elle ne pivote pas avec le pion : « droite à l'écran » garde le même sens pendant tout un virage. Son orientation est transportée le long du trajet, sans nord imposé, pour passer les pôles sans à-coup.
-- **Mini-carte** dans un coin : planisphère avec les zones de chacun et la position des pions.
+### Frôler (combo)
+- Franchir une paire à moins de **34 px** d'un bord = « Frôlé ! » : le combo augmente et le passage rapporte 1 + combo.
+- Le combo retombe à 0 après **2,5 s** sans nouveau frôlement.
+- À moins de **20 px** = « AU PIXEL ! » : **ralenti dramatique** (×0,3 pendant 0,45 s) et bords de l'écran assombris.
 
-### Valeurs de départ
-| Paramètre | Valeur | Rôle |
+## 4. Bonus
+
+| Bonus | Visuel | Effet |
 |---|---|---|
-| `pawnSpeed` | 4 °/s | Traversée de la France en 2 s, tour du monde en 90 s |
-| `turnRate` | 900 °/s | Virage net : angle droit en 0,1 s |
-| `viewSpanDeg` | 12° | Arc de globe visible sur la plus petite dimension de l'écran |
-| `cameraTiltDeg` | 30° | Inclinaison de la vue |
-| `stickRadiusPx` | 14 px | Rayon du joystick invisible : au-delà, l'ancre suit le doigt |
+| Bao | Brioche vapeur | +2 points, +1 bao, remplit la jauge du dragon |
+| Lanterne | Lanterne rouge « 福 » | Bouclier qui encaisse un choc, puis 1,2 s d'invulnérabilité clignotante |
+| Nuage-éclair | Petit nuage | 2,6 s de sprint ×2,2 : le panda se recentre et casse les obstacles |
+| Pêche d'immortalité | Pêche | 4 s de ralenti ×0,55 et 6 s d'aimant à bao (rayon 240 px) |
 
-Ces valeurs fixent l'échelle ressentie du monde : ce sont les premières à régler.
+Apparition : un bao dans 55 % des trous de bambous ; entre deux paires, 12 % lanterne, 10 % nuage, 9 % pêche (s'il n'y a pas d'obstacle à cet endroit).
 
----
+## 5. Dragon céleste
 
-## 5. Traînée, boucle et capture
+- **12 bao** remplissent la jauge (affichée en haut à gauche).
+- Le dragon porte le panda **5,5 s** : invincible, vitesse ×1,8, gravité réduite (900), le corps du dragon suit la trajectoire du panda.
+- Pluie de bao (un toutes les 0,13 s) attirés automatiquement.
+- Gong au départ, la musique passe à son niveau maximal.
+- À la fin, 1 s d'invulnérabilité.
 
-- Chaque joueur démarre avec son **pays de départ entier**.
-- Hors de son territoire, le pion laisse une **traînée d'empreintes de pattes** sur les cases traversées.
-- En rentrant sur son territoire, la boucle se ferme : la traînée et toutes les cases de terre qu'elle enferme deviennent à lui. Calcul par remplissage depuis l'extérieur.
-- Les empreintes se remplissent alors avec le motif de pelage de l'animal (animation courte).
-- Les cases de mer enfermées ne sont pas capturées et ne comptent pas.
-- Du territoire rival enfermé est pris.
-- **Mort** : un pion meurt si un rival touche sa traînée. Recouper sa propre traînée est sans danger ; seule la rentrée dans sa zone ferme la boucle.
-- À la mort : la traînée disparaît, **ses pays redeviennent neutres**, il réapparaît après `respawnDelay` dans un pays neutre avec ce pays entier.
+## 6. Variété : obstacles, singe, événements
 
----
+### Obstacles (placés entre deux paires de bambous)
+| Obstacle | Dès | Probabilité | Comportement |
+|---|---|---|---|
+| Grue | 8 pts | 20 % | Vole vers le panda en ondulant, mortelle |
+| Cascade | 14 pts | 14 % | Colonne d'eau qui pousse vers le bas (+1400 px/s²), pas mortelle |
+| Pont de corde | 20 pts | 12 % | Planches suspendues, mortelles ; la paire suivante est forcée du même côté que le trou précédent pour rester franchissable |
 
-## 6. Bascule des pays et capitales
+Pendant le nuage ou le dragon, ces obstacles sont **cassés** (compte pour la mission « casse »).
 
-- Chaque pays entamé par le joueur porte une étiquette avec la part conquise en pourcentage et une jauge marquée au seuil de bascule : la règle se lit sans tutoriel.
-- La peinture d'une zone ne déborde jamais d'une frontière : un pays possédé en entier est peint exactement jusqu'à ses frontières.
-- Après chaque capture, pour chaque pays touché : si un joueur possède au moins `flipThreshold` (50 %) des cases du pays, **toutes les cases du pays passent à lui**. Effet visuel et sonore marqué : c'est la récompense centrale du jeu.
-- Un pays compte au score seulement quand il est possédé en entier.
-- **Capitale** : chaque pays a sa capitale, marquée par un petit pion-ville. Si la traînée d'un joueur passe sur la capitale, le pays bascule chez lui à la fermeture de la boucle, quel que soit le pourcentage.
-- HUD : nombre de pays possédés, chrono, nom du pays survolé.
+### Singe farceur (mini-boss)
+- Arrive à **30 points**, puis tous les **45 points** de plus (pas pendant le dragon).
+- Plus de nouveaux bambous pendant sa présence.
+- Assis sur un nuage à droite, il monte et descend et lance toutes les 0,9–1,3 s un projectile visé sur le panda (trajectoire en cloche) : **pomme de pin** mortelle (80 %) ou **pêche** à attraper (20 %).
+- Repart après **12 s** : +10 points, mission « singe » validée.
 
----
+### Événements au hasard (7 s, toutes les 18–28 s, dès 5 points, jamais pendant le singe ou le dragon)
+- **Vent** ascendant ou plongeant : force verticale ±520 px/s², traits de vent à l'écran.
+- **Fête des lanternes** : ciel assombri, nombreuses lanternes, bao dans chaque trou et lignes de bao en plus.
+- **Brume** : le côté droit de l'écran devient laiteux, il faut réagir tard.
 
-## 7. L'océan
+Chaque événement est annoncé par une bannière.
 
-- Le pion peut aller en mer : la figurine monte dans une petite barque en bois.
-- En mer, vitesse multipliée par `seaSpeedFactor` (2) : la mer ne rapporte rien, on la traverse vite. La traînée continue et reste exposée jusqu'au retour dans sa zone.
-- On ne capture pas de mer. Une boucle peut passer par la mer pour entourer une île ou une côte.
-- Conséquence voulue : changer de continent est un pari, mais pas une attente.
+## 7. Saisons
 
----
+Changement tous les **25 points**, en boucle, avec un fondu des couleurs (ciel, montagnes, bambous, sol, rivière, soleil) :
 
-## 8. Les rivaux
+| # | Saison | Particules d'ambiance | Particularités |
+|---|---|---|---|
+| 0 | 🌸 Printemps | Pétales roses et dorés | Ciel pêche |
+| 1 | 🌙 Soir d'été | Lucioles | Ciel crépuscule, pagode éclairée |
+| 2 | 🍁 Automne | Feuilles d'érable | Bambous dorés, feuilles orange |
+| 3 | ❄️ Hiver | Neige | Neige sur les sommets et les bambous |
 
-- 5 rivaux, chacun d'une couleur, avec un pays de départ sur un continent différent (`startCountries`).
-- Règles communes à tous les pions :
-  - marcher sur la traînée d'un rival l'élimine ; on est donc en sécurité dans sa zone, où l'on ne laisse pas de traînée ;
-  - une boucle fermée prend tout ce qu'elle enferme, y compris le terrain des autres ;
-  - un joueur à qui il ne reste plus une case est éliminé ;
-  - à la mort, ses terres redeviennent neutres et il réapparaît après `respawnDelay` dans un pays neutre.
-- Comportement : sortir de sa zone, tracer une boucle rectangulaire de taille tirée au hasard, rentrer, faire une pause chez soi, recommencer. Il rentre plus tôt si un pion approche.
-- Trois tempéraments par réglage (`botProfiles`) : prudent (petites boucles), expansionniste (grandes boucles), chasseur (va couper les traînées à portée ; sa portée grandit avec le nombre de pays de la cible, donc le plus gros est la cible).
-- Ils sont un peu plus lents que le joueur (`botSpeedFactor`) : leur rôle est de rendre la carte vivante, pas de gagner.
-- Partie de `gameDuration` secondes, classement final au nombre de pays, record gardé en local.
-- Mini-carte en bas à gauche : planisphère, zones de chacun, position des pions.
+Décor fixe : soleil, trois plans de montagnes karstiques en défilement différentiel, pagode, forêt de bambous lointaine, lanternes flottantes, sol herbeux et rivière.
 
----
+## 8. Rejouabilité
 
-## 9. Thème et rendu
+### Missions
+- Toujours **3 missions actives**, conservées d'une partie à l'autre jusqu'à réussite.
+- Une mission se valide **pendant** la partie (bannière + son). Elle est remplacée au lancement de la partie suivante par une nouvelle, un peu plus dure (la difficulté suit le nombre total de missions réussies).
+- Chaque mission réussie : **multiplicateur de bao +0,25** (plafond ×5). Le multiplicateur s'applique aux bao versés dans la tirelire en fin de partie, pas au score (le record reste comparable).
 
-- **Plateau de jeu** : globe mat aux couleurs douces, terres légèrement en relief sur une mer unie, frontières gravées, ombres douces. Pays neutres en teinte bois clair ou carton.
-- **Pions** : figurines d'animaux en bois peint, low-poly, générées par le code (formes simples, pas de fichiers de modèles).
-- **Zones** : le motif de pelage de l'animal, peint sur le plateau par un shader.
-
-| Pion | Zone | Traînée |
+| Clé | Intitulé | Objectif (n = missions déjà réussies) |
 |---|---|---|
-| Tigre | Rayures orange et noires | Empreintes de félin |
-| Panda | Taches noir et blanc | Empreintes rondes |
-| Girafe | Puzzle de taches brunes | Sabots |
-| Zèbre | Rayures noir et blanc | Sabots |
-| Abeille | Alvéoles de miel | Pointillés de pollen |
-| Toucan | Aplats jaune, rouge et noir | Pattes d'oiseau |
+| near | Frôle N bambous | 3 + n |
+| bao | Attrape N bao | 6 + 2n |
+| score | Fais N points | 15 + 5n |
+| maxCombo | Fais un combo ×N | 2 + n/2 |
+| dragon | Chevauche le dragon N fois | 1 + n/5 |
+| peach | Mange N pêches | 1 + n/5 |
+| season | Atteins telle saison | 1 + n/3 (max 5) |
+| monkey | Survis au singe | 1 |
+| shieldBreak | Brise N boucliers | 1 + n/6 |
+| smash | Casse N obstacles | 3 + n |
 
-- La lisibilité prime : deux zones voisines doivent se distinguer d'un coup d'œil, et le pion du joueur doit toujours ressortir.
+### Fantôme du record
+- On enregistre la hauteur du panda tous les 6 px de distance.
+- Si la partie bat le record, cette trace remplace le fantôme sauvegardé (plafond 9000 points).
+- Pendant la partie, le fantôme (panda translucide, écharpe sombre) vole à la même abscisse ; une bannière s'affiche quand on dépasse le point où il était tombé.
 
----
+## 9. Économie et boutique
 
-## 10. Étapes de développement
+- Les bao ramassés × multiplicateur s'ajoutent à la tirelire à la mort.
+- Boutique **100 % esthétique**, cinq catégories, un objet équipé par catégorie, aperçu animé avant achat :
 
-Chaque étape se termine par une validation sur iPhone avant de passer à la suivante.
+| Catégorie | Objets (prix en bao) |
+|---|---|
+| Chapeaux | Aucun (0), Chapeau de riz (30), Bandeau kung-fu (45), Couronne de fleurs (70), Chapeau de mandarin (140), Cornes de dragon (220) |
+| Écharpes | Or (0), Rouge (20), Jade (20), Nuit (35), Arc-en-ciel (120) |
+| Lunettes | Aucune (0), Rondes (35), De soleil (60), Monocle (90) |
+| Ailes | Feuilles (0), Lotus (70), Éventail (110), Cerf-volant (150), Phénix (260) |
+| Traînées | Aucune (0), Pétales (40), Étincelles (80), Encre (100), Arc-en-ciel (160) |
 
-1. **Fondations et globe** — Vite + TS + Three.js, globe plateau avec pays et frontières, rotation libre au doigt (vue menu), boucle à pas fixe, entrée tactile propre. *Validation : le globe s'affiche à 60 fps, aucun geste parasite de Safari.*
-2. **Pion, contrôle, caméra** — pion qui avance, cap au pouce, caméra suiveuse, passage des pôles. *Validation : on trace des boucles et des huit sans jamais être désorienté. Si ce n'est pas le cas, on règle ici avant d'aller plus loin.*
-3. **Traînée et capture** — script de build de la grille « case → pays », empreintes, fermeture de boucle, remplissage, mort sur sa propre traînée. *Validation : fermer une boucle est net et satisfaisant.*
-4. **Bascule des pays** — seuil de 50 %, effet de bascule, compteur de pays. *Validation : on comprend seul pourquoi un pays a basculé.*
-5. **Océan** — barque, vitesse en mer, îles. *Validation : traverser une mer fait hésiter.*
-6. **Rivaux et partie complète** — bots, coupure de traînée, réapparition, chrono, écran de fin, meilleur score, mini-carte. *Validation : une partie de 4 min est jouable de bout en bout.*
-7. **Capitales** — pions-villes, bascule par capitale. *Validation : on se surprend à viser une capitale.*
-8. **Habillage** — figurines des 6 animaux, motifs de pelage, empreintes par animal, sons courts.
+- À équilibrer après des tests réels (gain moyen par partie, nombre de parties pour le premier achat : viser 2–3).
 
----
+## 10. Audio
 
-## 11. Critères de réussite du proto
+- **Effets** synthétisés : battement, point, bao, bonus, frôlement, choc, bouclier, gong, lancer.
+- **Musique** pentatonique (ré, mi, fa#, la, si) façon guzheng, générée en continu, qui s'intensifie :
+  - menu : mélodie douce ;
+  - partie : + basse ;
+  - combo ≥ 2 ou singe : + claquements de bois ;
+  - combo ≥ 4 : + tambours et arpèges ;
+  - dragon : tout, tempo +34.
+- Tempo de base 88, +6 par niveau de combo (jusqu'à 8).
+- Bouton son/silence mémorisé.
 
-Après 10 parties :
-- Le contrôle au pouce sur le globe est naturel, sans tutoriel.
-- La bascule d'un pays procure un vrai plaisir, et on la provoque exprès.
-- Les morts paraissent méritées.
-- On regarde la mini-carte pour choisir sa prochaine cible.
-- On a envie de relancer une partie.
+## 11. Écrans et interface
+
+- **Menu** : titre, record, tirelire, multiplicateur, missions, Jouer, Boutique, son, légende des bonus. Le panda plane derrière.
+- **Partie (HUD canvas)** : score au centre, bao de la partie, jauge du dragon, barres des bonus et événements actifs, combo, multiplicateur, bannières.
+- **Fin de partie** (après 0,95 s de chute) : cause de la mort (« Aïe, le bambou ! », « Plouf dans la rivière ! », « Percuté par une grue ! », « Pomme de pin en pleine tête ! », « Coincé dans le pont ! »), score, record / nouveau record, bao gagnés (×multiplicateur), tirelire, missions, Rejouer, Boutique, Menu.
+- **Boutique** : tirelire, aperçu animé, onglets, grille d'objets (Équipé / Possédé / prix), bouton Acheter ou « Il manque N bao ».
+
+## 12. Sauvegarde
+
+Clé `pandaRoux2` : `best`, `bao`, `owned` (liste `catégorie:id`), `eq` (objet équipé par catégorie), `done` (missions réussies), `missions` (3 × `{k, goal, done}`), `ghost` (tableau d'entiers), `sound`.
+
+Prévoir un numéro de version et une migration dès la version Claude Code.
+
+## 13. Feuille de route
+
+1. **Portage** du prototype vers Vite + TypeScript, à l'identique (sensations, valeurs, écrans).
+2. **Finition** : pause, PWA, FR/EN, réglages, tutoriel de première partie (skill `/finition`).
+3. **Équilibrage** : courbe de difficulté, prix, fréquence des bonus et des obstacles, après tests sur iPhone.
+4. **Contenu** : plus de saisons/biomes, nouvelles tenues, nouveaux événements.
+5. **Idées non retenues pour l'instant** : défi du jour, feux d'artifice tous les 25 points, tenues à pouvoir, coffre au hasard, panoplies.
+
+## 14. Points ouverts
+
+- Nom définitif du jeu (« Panda Roux Volant » est provisoire ; le dépôt s'appelle Furritory).
+- Le fantôme doit-il aussi enregistrer les tenues portées ce jour-là ?
+- Faut-il un petit délai d'invulnérabilité au tout début de partie ?
