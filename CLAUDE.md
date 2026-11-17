@@ -18,6 +18,7 @@ Panda Roux Volant : jeu mobile web type Flappy Bird (panda roux, forêt chinoise
 - Garde la logique (mise à jour) séparée du dessin.
 - Protège chaque accès à `localStorage` par try/catch.
 - Après une modification, vérifie que `npm run build` passe.
+- Git : commite et pousse directement sur `main`, sans branche ni pull request.
 
 ## Première tâche
 Porter le prototype vers Vite + TypeScript à l'identique (étape 1 de la feuille de route), en suivant le découpage proposé dans la spec.
