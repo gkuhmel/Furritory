@@ -1,6 +1,6 @@
 // Dessin d'une image complète, dans l'ordre des plans du prototype.
 import { S } from '../save';
-import { G } from '../state';
+import { G, view } from '../state';
 import { rnd } from '../util';
 import { ghostY } from '../world/ghost';
 import { ctx } from './canvas';
@@ -13,6 +13,7 @@ import { drawItems } from './items';
 import { drawDragon, drawPanda } from './panda';
 import { drawFlash, drawOverlays, drawParticles, drawPops } from './fx';
 import { drawHud } from './hud';
+import { drawOutlined } from './outline';
 
 const GHOST_EQ = { hat: 'none', scarf: 'night', glasses: 'none', wings: 'leaf' };
 
@@ -31,7 +32,10 @@ export function render(): void {
   drawDragon();
   ctx.save(); ctx.translate(panda.x, panda.y);
   const blink = G.ghostT > 0 && G.dragonT <= 0 && Math.floor(t * 20) % 2;
-  drawPanda(ctx, S.eq, { rot: panda.rot, wing: panda.wing, dead: G.state === 'over', alpha: blink ? 0.4 : 1, shield: G.shield, dash: G.dashT > 0 });
+  if (G.state === 'menu' || G.state === 'map') ctx.scale(view.menuScale, view.menuScale);
+  // halo du nuage-éclair et bouclier, hors contour
+  drawPanda(ctx, S.eq, { fxOnly: true, dash: G.dashT > 0, shield: G.shield });
+  drawOutlined(ctx, 150, 130, c => drawPanda(c, S.eq, { rot: panda.rot, wing: panda.wing, dead: G.state === 'over' }), '#3a1408', 1.4, blink ? 0.4 : 1);
   ctx.restore();
   drawAmb(); drawWind(); drawFog();
   drawPops();

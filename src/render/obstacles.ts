@@ -25,17 +25,40 @@ export function drawFinish(): void {
   for (let i = 0; i < 7; i++) { ctx.fillStyle = ['#ff4a5a', '#ffcf4a', '#7df9ff', '#9be37a'][i % 4]; ctx.beginPath(); const fx = x + i * 10 - 4, fy = 60 + Math.sin(t * 4 + i) * 3; ctx.moveTo(fx, fy); ctx.lineTo(fx + 8, fy); ctx.lineTo(fx + 4, fy + 10); ctx.fill(); }
 }
 
+// Bambou : tige arrondie avec reflet, nœuds en relief, feuilles nervurées.
 function bambooStalk(x: number, y1: number, y2: number, cap: 'top' | 'bottom'): void {
   const w = PIPE_W, g = ctx.createLinearGradient(x, 0, x + w, 0);
-  g.addColorStop(0, css(pal.bam[0])); g.addColorStop(0.35, css(pal.bam[1])); g.addColorStop(0.7, css(pal.bam[2])); g.addColorStop(1, css(pal.bam[3]));
+  g.addColorStop(0, css(pal.bam[3])); g.addColorStop(0.18, css(pal.bam[0])); g.addColorStop(0.38, css(pal.bam[1])); g.addColorStop(0.7, css(pal.bam[2])); g.addColorStop(1, css(pal.bam[3]));
   ctx.fillStyle = g; ctx.fillRect(x + 6, y1, w - 12, y2 - y1);
-  ctx.fillStyle = css(pal.bam[3]);
-  if (cap === 'top') for (let y = y2; y > y1; y -= 52) ctx.fillRect(x + 3, y - 3, w - 6, 6); else for (let y = y1; y < y2; y += 52) ctx.fillRect(x + 3, y - 3, w - 6, 6);
-  const ey = cap === 'top' ? y2 - 14 : y1;
-  ctx.fillRect(x, ey, w, 14); ctx.fillStyle = css(pal.bam[1]); ctx.fillRect(x + 4, ey + 3, w - 8, 4);
+  // reflet vertical
+  ctx.fillStyle = 'rgba(255,255,255,0.28)'; ctx.fillRect(x + 17, y1, 5, y2 - y1);
+  ctx.fillStyle = 'rgba(255,255,255,0.14)'; ctx.fillRect(x + 24, y1, 3, y2 - y1);
+  // nœuds
+  const node = (y: number) => {
+    ctx.fillStyle = css(pal.bam[3]); ctx.fillRect(x + 3, y - 4, w - 6, 7);
+    ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillRect(x + 5, y - 4, w - 10, 2);
+    ctx.strokeStyle = 'rgba(30,15,10,0.45)'; ctx.lineWidth = 1.5; ctx.strokeRect(x + 3, y - 4, w - 6, 7);
+  };
+  if (cap === 'top') for (let y = y2 - 52; y > y1; y -= 52) node(y); else for (let y = y1 + 52; y < y2; y += 52) node(y);
+  ctx.strokeStyle = 'rgba(30,15,10,0.5)'; ctx.lineWidth = 2; ctx.strokeRect(x + 6, y1, w - 12, y2 - y1);
+  // embout
+  const ey = cap === 'top' ? y2 - 16 : y1;
+  const cg = ctx.createLinearGradient(x, 0, x + w, 0);
+  cg.addColorStop(0, css(pal.bam[3])); cg.addColorStop(0.35, css(pal.bam[1])); cg.addColorStop(1, css(pal.bam[3]));
+  ctx.fillStyle = cg; ctx.fillRect(x, ey, w, 16);
+  ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.fillRect(x + 4, ey + 3, w - 8, 3);
+  ctx.strokeStyle = 'rgba(30,15,10,0.55)'; ctx.lineWidth = 2.2; ctx.strokeRect(x, ey, w, 16);
   if (pal.snow > 0.05 && cap === 'bottom') { ctx.fillStyle = `rgba(255,255,255,${pal.snow})`; ctx.beginPath(); ctx.ellipse(x + w / 2, y1, w / 2 + 3, 7, 0, Math.PI, 0); ctx.fill(); }
+  // feuilles
   ctx.fillStyle = G.curSeason === 2 ? '#e07a2a' : css(pal.bam[2]);
-  const ly = cap === 'top' ? y2 - 40 : y1 + 40; leaf(x + w - 4, ly, 1); leaf(x + 4, ly + (cap === 'top' ? -60 : 60), -1);
+  const ly = cap === 'top' ? y2 - 44 : y1 + 44; leaf(x + w - 4, ly, 1); leaf(x + 4, ly + (cap === 'top' ? -60 : 60), -1);
+}
+
+// Ombre douce portée par un pilier sur le décor.
+function pillarShadow(x: number, y1: number, y2: number): void {
+  const g = ctx.createLinearGradient(x + PIPE_W - 6, 0, x + PIPE_W + 14, 0);
+  g.addColorStop(0, 'rgba(20,10,30,0.22)'); g.addColorStop(1, 'rgba(20,10,30,0)');
+  ctx.fillStyle = g; ctx.fillRect(x + PIPE_W - 6, y1, 20, y2 - y1);
 }
 
 const PILLARS = { bamboo: bambooStalk, pole: polePillar, temple: templePillar, ice: icePillar, jade: jadePillar };
@@ -44,6 +67,7 @@ export function drawPipes(): void {
   const stalk = PILLARS[theme().pillar];
   for (const p of G.pipes) {
     ctx.globalAlpha = p.smashed ? 0.3 : 1;
+    pillarShadow(p.x, -20, p.cy - p.gap / 2); pillarShadow(p.x, p.cy + p.gap / 2, GROUND);
     stalk(p.x, -20, p.cy - p.gap / 2, 'top'); stalk(p.x, p.cy + p.gap / 2, GROUND, 'bottom');
     ctx.globalAlpha = 1;
   }

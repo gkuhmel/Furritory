@@ -79,7 +79,7 @@ function freshRun() {
 }
 
 // Dimensions logiques de l'écran (mises à jour au redimensionnement).
-const G_view = { W: 400, dpr: 1 };
+const G_view = { W: 400, dpr: 1, menuY: C.MENU_PANDA_Y, menuScale: C.MENU_PANDA_SCALE };
 export const view = G_view;
 
 // État global : écran courant, horloge, effets d'écran, puis données de la partie.

@@ -28,7 +28,7 @@ Ajouté après le portage. Le mode infini décrit dans les sections suivantes re
 
 ### Difficulté
 Courbe en dents de scie (`levelDef` dans `src/config.ts`) : elle monte dans un monde et redescend un peu au début du suivant. Avec k de 0 à 1 :
-passages 12 → 36, trou 180 → 130 px, espacement 250 → 205 px, vitesse 165 → 260 px/s, part de piliers qui oscillent de 0 (monde 1, niveaux 1-3) jusqu'à 70 %, amplitude et vitesse d'oscillation croissantes.
+passages 26 → 64, trou 174 → 128 px, espacement 250 → 205 px, vitesse 165 → 260 px/s, part de piliers qui oscillent de 0 (monde 1, niveau 1) jusqu'à 70 %, amplitude et vitesse d'oscillation croissantes. Un niveau dure de 40 s à 1 min environ.
 
 ### Lettres CHOCO et étoiles
 - 5 lettres **C·H·O·C·O** par niveau, placées dans des trous de passages (de plus en plus près des bords).
@@ -37,6 +37,12 @@ passages 12 → 36, trou 180 → 130 px, espacement 250 → 205 px, vitesse 165 
 
 ### Carte
 Écran « Aventure » : carte verticale qui défile, un tronçon par monde (dégradé, décor, titre et étoiles du monde), chemin pointillé entre des médaillons numérotés, étoiles sous les niveaux réussis, cadenas sur les niveaux fermés, Choco qui plane au-dessus du niveau en cours. Après une victoire : étoiles, lettres, bao, « Niveau suivant », « Rejouer », « Carte ».
+
+### Style visuel
+- Interface : polices Baloo 2 (titres, boutons, textes du canvas) et Nunito, boutons « bonbons » en relief (or, rouge laqué, jade, papier), panneaux en papier crème bordés de laque rouge et d'un filet d'or, rubans de titre, pastilles sombres bordées d'or.
+- Menu : logo « Flying Choco » en relief qui flotte, Choco en grand qui plane entre le logo et les boutons.
+- Carte : un paysage peint par monde (forêt et rivière, rizières en terrasses, place pavée et maisons, lacs gelés et sapins, mer de nuages et toits dorés), chemin pavé, médaillons en relief, étoiles en arc, Choco au-dessus du niveau en cours, raccords en nuages entre les mondes.
+- Jeu : Choco cerné d'un contour sombre façon dessin animé, piliers avec reflets, contours et ombre portée, nuages et rayons de soleil, sol avec herbes, fleurs, rivière scintillante et buissons de premier plan, HUD en pastilles et jauges arrondies.
 
 ### Sauvegarde
 Version 2 : ajoute `levels` (étoiles par niveau, index = monde × 10 + niveau). Les sauvegardes v1 et du prototype sont migrées.

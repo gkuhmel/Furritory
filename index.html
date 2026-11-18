@@ -2,67 +2,84 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#2a1430">
 <title>Flying Choco</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@700;800&display=swap">
 <link rel="stylesheet" href="/src/style.css">
 </head>
 <body>
 <canvas id="c"></canvas>
 
-<div id="menu" class="screen">
-  <div class="card">
-    <h1>Flying<small>Choco</small></h1>
-    <div class="stats"><span>⭐ <b id="mStars">0</b></span><span>🏆 <b id="mBest">0</b></span><span>🥟 <b id="mBao">0</b></span><span>✨ bao ×<b id="mMult">1</b></span></div>
-    <div class="missions" id="mMissions"></div>
-    <button class="big" id="bPlay">Aventure</button>
-    <div class="row"><button id="bEndless">♾️ Mode infini</button></div>
-    <div class="row"><button id="bShop">👘 Boutique</button><button id="bSound" style="flex:0 0 64px">🔊</button></div>
-    <p class="legend">Attrape les lettres <b>C·H·O·C·O</b> : 3 lettres = ⭐⭐, les 5 = ⭐⭐⭐ et bao ×2<br>🥟 bao · 🏮 bouclier · ☁️ nuage-éclair · 🍑 ralenti + aimant · 12 bao = 🐉 dragon</p>
+<div id="menu" class="screen menu">
+  <div class="topbar">
+    <span class="chip">⭐ <b id="mStars">0</b></span>
+    <span class="chip">🥟 <b id="mBao">0</b></span>
+    <button id="bSound" class="iconbtn" aria-label="Son">🔊</button>
+  </div>
+  <div class="logo"><span class="l1" data-t="Flying">Flying</span><span class="l2" data-t="Choco">Choco</span></div>
+  <div class="menubottom">
+    <button class="btn gold big" id="bPlay"><span class="ico">▶</span>Aventure</button>
+    <div class="row">
+      <button class="btn jade" id="bEndless">♾️ Infini</button>
+      <button class="btn red" id="bShop">👘 Boutique</button>
+    </div>
+    <div class="panel slim">
+      <div class="missions" id="mMissions"></div>
+      <div class="minis"><span>🏆 Record infini <b id="mBest">0</b></span><span>✨ Bao ×<b id="mMult">1</b></span></div>
+    </div>
   </div>
 </div>
 
 <div id="over" class="screen hidden">
-  <div class="card">
-    <h2 id="oTitle">Aïe, le bambou !</h2>
+  <div class="panel pop">
+    <div class="ribbon red" id="oTitle">Aïe, le bambou !</div>
     <div class="score" id="oScore">0</div>
-    <div id="oBest" style="font-size:16px;opacity:.9"></div>
-    <div id="oNew" class="new hidden">NOUVEAU RECORD !</div>
-    <div class="stats"><span id="oBao"></span><span>💰 <b id="oWallet"></b></span></div>
+    <div class="sub" id="oBest"></div>
+    <div id="oNew" class="new hidden">✨ NOUVEAU RECORD ! ✨</div>
+    <div class="rewards"><span id="oBao"></span><span>💰 <b id="oWallet"></b></span></div>
     <div class="missions" id="oMissions"></div>
-    <button class="big" id="bAgain">Rejouer</button>
-    <div class="row"><button id="bShop2">👘 Boutique</button><button id="bMenu">Menu</button></div>
+    <button class="btn gold big" id="bAgain">↻ Rejouer</button>
+    <div class="row"><button class="btn paper" id="bShop2">👘 Boutique</button><button class="btn paper" id="bMenu">Menu</button></div>
   </div>
 </div>
 
 <div id="map" class="screen mapscreen hidden">
-  <div class="maptop"><button id="bMapBack">◀ Menu</button><span>⭐ <b id="mapStars">0</b></span><span>🥟 <b id="mapBao">0</b></span></div>
   <div id="mapScroll" class="mapscroll"><div id="mapInner" class="mapinner"></div></div>
+  <div class="maptop">
+    <button id="bMapBack" class="btn paper small">◀</button>
+    <span class="chip">⭐ <b id="mapStars">0</b></span>
+    <span class="chip">🥟 <b id="mapBao">0</b></span>
+  </div>
 </div>
 
 <div id="win" class="screen hidden">
-  <div class="card">
-    <h2>Niveau réussi !</h2>
-    <div id="wLevel" style="font-size:15px;opacity:.9"></div>
+  <div class="rays"></div>
+  <div class="panel pop">
+    <div class="ribbon gold">Niveau réussi !</div>
+    <div class="sub" id="wLevel"></div>
     <div id="wStars" class="bigstars"></div>
     <div id="wLetters" class="letters"></div>
-    <div class="stats"><span id="wBao"></span><span>💰 <b id="wWallet"></b></span></div>
+    <div class="rewards"><span id="wBao"></span><span>💰 <b id="wWallet"></b></span></div>
     <div class="missions" id="wMissions"></div>
-    <button class="big" id="bNext">Niveau suivant</button>
-    <div class="row"><button id="bWinAgain">Rejouer</button><button id="bWinMap">🗺️ Carte</button></div>
+    <button class="btn gold big" id="bNext">Niveau suivant ▶</button>
+    <div class="row"><button class="btn paper" id="bWinAgain">↻ Rejouer</button><button class="btn paper" id="bWinMap">🗺️ Carte</button></div>
   </div>
 </div>
 
 <div id="shop" class="screen hidden">
-  <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">Boutique</h2><div style="font-size:18px;font-weight:800">🥟 <span id="sBao">0</span></div></div>
-    <canvas id="pv" style="margin-top:10px"></canvas>
+  <div class="panel shop">
+    <div class="ribbon red">Boutique</div>
+    <div class="wallet">🥟 <span id="sBao">0</span></div>
+    <canvas id="pv"></canvas>
     <div class="tabs" id="tabs"></div>
     <div class="grid" id="grid"></div>
-    <div class="row"><button id="bBuy" class="hidden" style="background:linear-gradient(#ffcf4a,#ff8a3c);color:#fff;text-shadow:0 2px 0 #a33a1a;box-shadow:0 4px 0 #a33a1a"></button></div>
-    <div class="row"><button id="bBack">Retour</button></div>
+    <div class="row"><button id="bBuy" class="btn gold hidden"></button></div>
+    <div class="row"><button id="bBack" class="btn paper">◀ Retour</button></div>
   </div>
 </div>
-
 <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

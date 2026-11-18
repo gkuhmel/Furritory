@@ -9,6 +9,11 @@ import { ctx } from './canvas';
 type Cap = 'top' | 'bottom';
 
 // ---------- Piliers (à la place des bambous) ----------
+// Contour sombre du fût, pour le style dessin animé.
+function ol(x: number, y: number, w: number, h: number): void {
+  ctx.strokeStyle = 'rgba(30,12,10,0.5)'; ctx.lineWidth = 2; ctx.strokeRect(x, y, w, h);
+  ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.fillRect(x + w * 0.22, y, 4, h);
+}
 function vgrad(x: number, cols: string[]): CanvasGradient {
   const g = ctx.createLinearGradient(x, 0, x + PIPE_W, 0);
   cols.forEach((c, i) => g.addColorStop(i / (cols.length - 1), c));
@@ -18,7 +23,7 @@ function vgrad(x: number, cols: string[]): CanvasGradient {
 // Poteau de bois des rizières : liens de paille, chapeau d'épouvantail en bas, frange en haut.
 export function polePillar(x: number, y1: number, y2: number, cap: Cap): void {
   const w = PIPE_W;
-  ctx.fillStyle = vgrad(x, ['#5a3418', '#a8743e', '#8a5a2c', '#4a2a12']); ctx.fillRect(x + 12, y1, w - 24, y2 - y1);
+  ctx.fillStyle = vgrad(x, ['#5a3418', '#a8743e', '#8a5a2c', '#4a2a12']); ctx.fillRect(x + 12, y1, w - 24, y2 - y1); ol(x + 12, y1, w - 24, y2 - y1);
   ctx.fillStyle = '#d9b25a';
   for (let y = cap === 'top' ? y2 - 30 : y1 + 30; cap === 'top' ? y > y1 : y < y2; y += cap === 'top' ? -46 : 46) { ctx.fillRect(x + 9, y - 3, w - 18, 6); ctx.fillStyle = '#b8903a'; ctx.fillRect(x + 9, y + 1, w - 18, 2); ctx.fillStyle = '#d9b25a'; }
   if (cap === 'bottom') {
@@ -35,7 +40,7 @@ export function polePillar(x: number, y1: number, y2: number, cap: Cap): void {
 // Pilier de temple laqué rouge, bagues dorées, chapiteau en avant-toit.
 export function templePillar(x: number, y1: number, y2: number, cap: Cap): void {
   const w = PIPE_W;
-  ctx.fillStyle = vgrad(x, ['#8a1418', '#e8434a', '#c8282e', '#6a0e12']); ctx.fillRect(x + 8, y1, w - 16, y2 - y1);
+  ctx.fillStyle = vgrad(x, ['#8a1418', '#e8434a', '#c8282e', '#6a0e12']); ctx.fillRect(x + 8, y1, w - 16, y2 - y1); ol(x + 8, y1, w - 16, y2 - y1);
   ctx.fillStyle = '#ffcf4a';
   for (let y = cap === 'top' ? y2 - 60 : y1 + 60; cap === 'top' ? y > y1 : y < y2; y += cap === 'top' ? -90 : 90) ctx.fillRect(x + 6, y - 3, w - 12, 6);
   const ey = cap === 'top' ? y2 : y1;
@@ -70,6 +75,7 @@ export function icePillar(x: number, y1: number, y2: number, cap: Cap): void {
     ctx.fillRect(x + 4, y1 + 8, w - 8, 6);
   }
   ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.fillRect(x + 14, y1, 4, y2 - y1 - 16);
+  ctx.strokeStyle = 'rgba(30,50,90,0.45)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x + 6, y1); ctx.lineTo(x + 6, y2 - 16); ctx.moveTo(x + w - 6, y1); ctx.lineTo(x + w - 6, y2 - 16); ctx.stroke();
   ctx.strokeStyle = 'rgba(90,140,190,0.5)'; ctx.lineWidth = 1.5;
   for (let y = y1 + 30; y < y2 - 30; y += 70) { ctx.beginPath(); ctx.moveTo(x + 20, y); ctx.lineTo(x + 34, y + 14); ctx.lineTo(x + 28, y + 30); ctx.stroke(); }
 }
@@ -77,7 +83,7 @@ export function icePillar(x: number, y1: number, y2: number, cap: Cap): void {
 // Colonne de jade : anneaux dorés et nuage au bout.
 export function jadePillar(x: number, y1: number, y2: number, cap: Cap): void {
   const w = PIPE_W;
-  ctx.fillStyle = vgrad(x, ['#1f6a52', '#8fe8c0', '#4fc49a', '#1a5a46']); ctx.fillRect(x + 8, y1, w - 16, y2 - y1);
+  ctx.fillStyle = vgrad(x, ['#1f6a52', '#8fe8c0', '#4fc49a', '#1a5a46']); ctx.fillRect(x + 8, y1, w - 16, y2 - y1); ol(x + 8, y1, w - 16, y2 - y1);
   ctx.fillStyle = '#ffd24a';
   for (let y = cap === 'top' ? y2 - 50 : y1 + 50; cap === 'top' ? y > y1 : y < y2; y += cap === 'top' ? -70 : 70) {
     ctx.fillRect(x + 6, y - 4, w - 12, 8); ctx.fillStyle = '#c89a20'; ctx.fillRect(x + 6, y + 2, w - 12, 2); ctx.fillStyle = '#ffd24a';

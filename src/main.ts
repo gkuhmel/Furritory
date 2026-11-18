@@ -9,7 +9,7 @@ import { deathHooks } from './world/damage';
 import { refreshMissions } from './meta/missions';
 import { startMusic } from './audio/music';
 import { initInput } from './input';
-import { initMenu, showMenu } from './ui/menu';
+import { fitMenuPanda, initMenu, showMenu } from './ui/menu';
 import { initGameOver, showOver } from './ui/gameover';
 import { drawPreview, initShop, updatePreview } from './ui/shop';
 import { isShown } from './ui/screens';
@@ -44,3 +44,5 @@ initInput(); initMenu(); initGameOver(); initShop(); initMap(); initWin();
 startMusic();
 resize(); refreshMissions(); showMenu();
 requestAnimationFrame(frame);
+// les polices arrivent après le premier affichage : on recale Choco au menu
+document.fonts?.ready.then(fitMenuPanda).catch(() => {});

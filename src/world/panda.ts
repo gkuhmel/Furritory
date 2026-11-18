@@ -1,7 +1,7 @@
 // Physique du panda : battement, gravité, vent, sol et plafond.
 import * as C from '../config';
 import { S } from '../save';
-import { G } from '../state';
+import { G, view } from '../state';
 import { clamp, rnd } from '../util';
 import { sfx } from '../audio/sfx';
 import { spawnTrail } from './fx';
@@ -46,7 +46,7 @@ export function updatePandaBounds(): boolean {
 // Panda qui plane derrière le menu et la boutique.
 export function hoverPanda(dt: number, W: number): void {
   const { panda } = G, t = G.t;
-  panda.y = C.H * 0.3 + Math.sin(t * 3) * 12; panda.x = W * 0.5; panda.rot = Math.sin(t * 3) * 0.1; panda.wing = (Math.sin(t * 10) + 1) / 2;
+  panda.y = C.H * view.menuY + Math.sin(t * 3) * 12; panda.x = W * 0.5; panda.rot = Math.sin(t * 3) * 0.1; panda.wing = (Math.sin(t * 10) + 1) / 2;
   G.distTot += C.MENU_DIST_SPEED * dt;
 }
 

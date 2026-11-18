@@ -8,12 +8,14 @@ export interface Mountain { x: number; w: number; h: number }
 export interface FarBamboo { x: number; w: number; h: number; c: number }
 export interface Amb { k: AmbKind; x: number; y: number; a: number; va: number; ph: number; vx: number; vy: number; r: number; c: string }
 export interface Lantern { x: number; y: number; s: number; ph: number }
+export interface SkyCloud { x: number; y: number; s: number; sp: number }
 
 export const scenery = {
   mountains: [] as Mountain[][],
   farBamboo: [] as FarBamboo[],
   amb: [] as Amb[],
   lanterns: [] as Lantern[],
+  clouds: [] as SkyCloud[],
 };
 
 // Regénère le décor à la nouvelle largeur.
@@ -28,6 +30,7 @@ export function buildScenery(): void {
   scenery.farBamboo = [];
   for (let x = 0; x < W + 200; x += rnd(18, 40)) scenery.farBamboo.push({ x, w: rnd(5, 9), h: rnd(200, 420), c: Math.random() });
   if (!scenery.amb.length) for (let i = 0; i < 45; i++) scenery.amb.push(newAmb(true));
+  if (!scenery.clouds.length) for (let i = 0; i < 6; i++) scenery.clouds.push({ x: rnd(-60, W + 60), y: rnd(40, 300), s: rnd(0.6, 1.3), sp: rnd(6, 16) });
   if (!scenery.lanterns.length) for (let i = 0; i < 6; i++) scenery.lanterns.push({ x: rnd(0, W), y: rnd(60, 340), s: rnd(0.6, 1), ph: rnd(0, 6) });
 }
 
@@ -44,6 +47,10 @@ function newAmb(any: boolean): Amb {
 
 export function updateScenery(dt: number, scroll: number): void {
   const t = G.t;
+  for (const c of scenery.clouds) {
+    c.x -= (c.sp + scroll * 0.06 * c.s) * dt;
+    if (c.x < -120) { c.x = view.W + 120; c.y = rnd(40, 300); c.s = rnd(0.6, 1.3); }
+  }
   for (const p of scenery.amb) {
     p.x += p.vx * dt - scroll * 0.25 * dt; p.a += p.va * dt;
     if (p.k === 'firefly') p.y += Math.sin(t * 1.5 + p.ph) * 0.4; else p.y += p.vy * dt;

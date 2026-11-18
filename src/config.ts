@@ -10,6 +10,8 @@ export const DT_MAX = 0.033; // pas de temps maximal (s)
 export const GROUND = H - 70; // altitude du sol
 export const MENU_SCROLL = 40; // défilement du décor hors partie (px/s)
 export const MENU_DIST_SPEED = 30; // avance de la distance au menu (px/s)
+export const MENU_PANDA_Y = 0.475; // hauteur de Choco au menu (fraction de H)
+export const MENU_PANDA_SCALE = 1.6; // Choco en grand au menu
 
 // ---------- Panda ----------
 export const PANDA_X = 0.28; // position horizontale (fraction de W)
@@ -182,11 +184,11 @@ export interface LevelDef {
 export function levelDef(w: number, l: number): LevelDef {
   const k = Math.min(1, (w * 8 + l) / 41);
   return {
-    pairs: Math.round(12 + k * 24),
-    gap: Math.round(180 - k * 50),
+    pairs: Math.round(26 + k * 38),
+    gap: Math.round(174 - k * 46),
     spacing: Math.round(250 - k * 45),
     speed: Math.round(165 + k * 95),
-    sway: w === 0 && l < 3 ? 0 : Math.min(0.7, 0.08 + w * 0.12 + l * 0.03),
+    sway: w === 0 && l < 1 ? 0 : Math.min(0.7, 0.08 + w * 0.12 + l * 0.03),
     swayAmp: 16 + k * 30,
     swayFreq: 1.3 + k * 1.1,
     flyer: l >= 2 ? 0.12 + 0.03 * w : 0,

@@ -110,13 +110,14 @@ function drawHead(c: C2D, t: number, dead: boolean): void {
   c.strokeStyle = FUR.ink; c.lineWidth = 1; c.beginPath(); c.moveTo(11, 5.4); c.lineTo(11, 6.4); c.moveTo(7.5, 6.4); c.quadraticCurveTo(9.3, 8.4, 11, 6.4); c.quadraticCurveTo(12.4, 8, 13.6, 6.6); c.stroke();
 }
 
-export interface PandaOpts { rot?: number; alpha?: number; wing?: number; dead?: boolean; shield?: boolean; dash?: boolean }
+export interface PandaOpts { rot?: number; alpha?: number; wing?: number; dead?: boolean; shield?: boolean; dash?: boolean; fxOnly?: boolean }
 
 export function drawPanda(c: C2D, eq: Partial<Equipment>, o: PandaOpts = {}): void {
   const t = G.t;
   c.save(); c.rotate(o.rot || 0); if (o.alpha != null) c.globalAlpha = o.alpha;
   if (o.dash) { c.fillStyle = 'rgba(255,255,255,0.35)'; c.beginPath(); c.ellipse(-6, 0, 34, 22, 0, 0, 7); c.fill(); }
   if (o.shield) { c.strokeStyle = `rgba(255,207,74,${0.6 + Math.sin(t * 8) * 0.3})`; c.lineWidth = 3; c.beginPath(); c.arc(0, 0, 30, 0, 7); c.stroke(); c.fillStyle = 'rgba(255,207,74,0.12)'; c.fill(); }
+  if (o.fxOnly) { c.restore(); return; }
   const w = o.wing || 0;
   // étirement au battement d'ailes
   c.save(); c.scale(1 - 0.07 * w, 1 + 0.09 * w);
